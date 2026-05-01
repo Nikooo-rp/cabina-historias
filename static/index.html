@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Cabina de Historias</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <style>
+    body {
+      font-family: Georgia, serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 0 24px;
+      background: #fdf6ec;
+      color: #2c2c2c;
+    }
+
+    h1 { color: #7b3f00; }
+
+    button {
+      padding: 14px 28px;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      margin-right: 10px;
+    }
+
+    #btn-grabar  { background: #7b3f00; color: white; }
+    #btn-detener { background: #555; color: white; display: none; }
+    #btn-confirmar-ubicacion {
+      background: #2c7a2c;
+      color: white;
+      display: none;
+      margin-top: 12px;
+    }
+
+    #estado {
+      margin: 20px 0;
+      font-style: italic;
+      color: #666;
+    }
+
+    #resultado {
+      margin-top: 24px;
+      padding: 16px;
+      background: white;
+      border-left: 4px solid #7b3f00;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      display: none;
+    }
+
+    #seccion-mapa { display: none; margin-top: 32px; }
+
+    #seccion-mapa h2 { color: #7b3f00; font-size: 1.1rem; }
+
+    #mapa {
+      height: 420px;
+      border-radius: 8px;
+      border: 2px solid #c9a87c;
+      margin-top: 12px;
+    }
+
+    #instruccion-mapa {
+      font-style: italic;
+      color: #555;
+      margin-top: 8px;
+      font-size: 0.95rem;
+    }
+
+    #ubicacion-elegida {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #333;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Cabina de Historias</h1>
+  <p>Presiona <strong>Grabar</strong>, cuenta tu historia, y cuando termines presiona <strong>Detener</strong>.</p>
+
+  <button id="btn-grabar">🎙️ Grabar</button>
+  <button id="btn-detener">⏹ Detener y enviar</button>
+
+  <p id="estado">Listo para grabar.</p>
+  <div id="resultado"></div>
+
+  <!-- Sección del mapa, aparece después de transcribir -->
+  <div id="seccion-mapa">
+    <h2>¿Dónde ocurrió esta historia?</h2>
+    <p id="instruccion-mapa">Haz clic en el mapa para marcar el lugar.</p>
+    <div id="mapa"></div>
+    <p id="ubicacion-elegida"></p>
+    <button id="btn-confirmar-ubicacion">📍 Confirmar ubicación</button>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    const btnGrabar    = document.getElementById("btn-grabar");
+    const btnDetener   = document.getElementById("btn-detener");
+    const btnConfirmar = document.getElementById("btn-confirmar-ubicacion");
+    const estado       = document.getElementById("estado");
+    const resultado    = document.getElementById("resultado");
+    const seccionMapa  = document.getElementById("seccion-mapa");
+    const ubicacionEl  = document.getElementById("ubicacion-elegida");
+
+    let mediaRecorder = null;
+    let chunks        = [];
+    let historiaId    = null;   // id de la historia recién guardada
+    let marcador      = null;   // marcador en el mapa
+    let coordElegida  = null;   // {lat, lng} elegido por el usuario
+    let mapa          = null;   // instancia del mapa
+
+    // --- Grabar ---
+    btnGrabar.addEventListener("click", async () => {
+      chunks = [];
+      seccionMapa.style.display = "none";
+      resultado.style.display   = "none";
+
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (e) {
+        estado.textContent = "❌ No se pudo acceder al micrófono.";
+        return;
+      }
+
+      mediaRecorder = new MediaRecorder(stream);
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        await enviarAudio();
+      };
+
+      mediaRecorder.start();
+      estado.textContent       = "🔴 Grabando... habla cuando quieras.";
+      btnGrabar.style.display  = "none";
+      btnDetener.style.display = "inline-block";
+    });
+
+    // --- Detener ---
+    btnDetener.addEventListener("click", () => {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        estado.textContent       = "⏳ Procesando tu historia...";
+        btnDetener.style.display = "none";
+      }
+    });
+
+    // --- Enviar audio al backend ---
+    async function enviarAudio() {
+      const blob     = new Blob(chunks, { type: "audio/webm" });
+      const formData = new FormData();
+      formData.append("audio", blob, "historia.webm");
+
+      try {
+        const respuesta = await fetch(window.location.origin + "/transcribir", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await respuesta.json();
+
+        if (data.error) {
+          estado.textContent = "❌ Error: " + data.error;
+          return;
+        }
+
+        historiaId = data.numero;
+
+        resultado.style.display = "block";
+        resultado.textContent   = data.texto;
+        estado.textContent      = `✅ Historia #${data.numero} guardada. Ahora marca dónde ocurrió.`;
+
+        mostrarMapa();
+
+      } catch (err) {
+        estado.textContent = "❌ No se pudo conectar con el servidor.";
+        console.error(err);
+      } finally {
+        btnGrabar.style.display = "inline-block";
+      }
+    }
+
+    // --- Mostrar el mapa centrado en Santa Fe de Antioquia ---
+    function mostrarMapa() {
+      seccionMapa.style.display      = "block";
+      btnConfirmar.style.display     = "none";
+      ubicacionEl.style.display      = "none";
+      coordElegida                   = null;
+
+      // Si el mapa ya existe, solo lo recentra
+      if (mapa) {
+        mapa.setView([6.5567, -75.8241], 15);
+        if (marcador) { mapa.removeLayer(marcador); marcador = null; }
+        return;
+      }
+
+      // Crea el mapa la primera vez
+      mapa = L.map("mapa").setView([6.5567, -75.8241], 15);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap"
+      }).addTo(mapa);
+
+      // Clic en el mapa → pone o mueve el marcador
+      mapa.on("click", (e) => {
+        coordElegida = { lat: e.latlng.lat, lng: e.latlng.lng };
+
+        if (marcador) {
+          marcador.setLatLng(e.latlng);
+        } else {
+          marcador = L.marker(e.latlng).addTo(mapa);
+        }
+
+        ubicacionEl.style.display = "block";
+        ubicacionEl.textContent   =
+          `📍 Lugar marcado: ${coordElegida.lat.toFixed(5)}, ${coordElegida.lng.toFixed(5)}`;
+        btnConfirmar.style.display = "inline-block";
+      });
+    }
+
+    // --- Confirmar ubicación ---
+    btnConfirmar.addEventListener("click", async () => {
+      if (!coordElegida || !historiaId) return;
+
+      try {
+        await fetch(window.location.origin + "/ubicar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: historiaId,
+            lat: coordElegida.lat,
+            lng: coordElegida.lng,
+          }),
+        });
+
+        estado.textContent         = "🗺️ Ubicación guardada. ¡Muchas gracias!";
+        btnConfirmar.style.display = "none";
+        seccionMapa.style.display  = "none";
+
+      } catch (err) {
+        estado.textContent = "❌ No se pudo guardar la ubicación.";
+        console.error(err);
+      }
+    });
+  </script>
+
+</body>
+</html>
