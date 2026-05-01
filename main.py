@@ -1,5 +1,6 @@
 # main.py
 import json
+from dotenv import load_dotenv
 
 from fastapi import FastAPI, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +8,8 @@ from fastapi.staticfiles import StaticFiles
 import requests, tempfile, os
 from datetime import datetime
 from openai import OpenAI
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -31,6 +34,7 @@ ARCHIVO_HISTORIAS = "historias.jsonl"
 with open("instrucciones.txt", "r", encoding="utf-8") as f:
     instructions = f.read()
 
+# Para la transcripción.
 TR_PROMPT = """
 Audio grabado en Santa Fe de Antioquia, Colombia. Narración oral espontánea
 en español colombiano antioqueño. El hablante está contando una historia,
@@ -181,22 +185,97 @@ async def ubicar(request: Request):
     return {"ok": True}
 
 #Endpoint para el formato narrativo
-@app.post("/narrativa")
-async def narrativa(request: Request):
+@app.post("/guion")
+async def generarGuion(request: Request):
     datos = await request.json()
-    transcription_text = datos["texto"]
+    historia_cruda = datos["texto", ""]
 
-    completion = client.chat.completions.create(
-    messages = [
-        {"role": "system", "content": "Eres un editor de historias orales del municipio de Santa Fe de Antioquia. Tu única tarea es dar forma narrativa a una transcripción, desde la perspectiva personal del personaje que te entrego."},
-        {"role": "user", "content": f"{instructions}:\n\n{transcription_text}"},
-    ],
-    model = "llama-70b-chat",
-    temperature = 0.6,
-    frequency_penalty=1.2,
+    # Para el formato.
+    SYSTEM_PROMPT = """Eres un asistente que adapta historias orales al guión de habla
+    de un narrador llamado Don Ezequiel, un hombre mayor de Santa Fe de Antioquia, Colombia.
+
+    DON EZEQUIEL tiene estas características:
+    - Es formal y pausado, como quien ha contado historias toda la vida
+    - Usa expresiones y vocabulario antioqueño natural: "vea pues", "dizque", "ome",
+    "sumercé", "el finado", "que Dios lo tenga", "hace años", "por estos lados",
+    "me contaron que", "según me dijo", "eso fue lo que me relataron"
+    - Nunca es brusco ni apresurado — cada frase tiene peso
+    - Adapta el tono según el contenido: más misterioso en leyendas, más cálido en memorias
+
+    REGLA MÁS IMPORTANTE — ATRIBUCIÓN DE LA HISTORIA:
+    Don Ezequiel debe distinguir siempre entre dos tipos de historia:
+
+    1. LEYENDAS Y MITOS COLECTIVOS (la Llorona, el Mohán, historias del pueblo en general):
+    Puede narrarlas con más apropiación, como parte de la memoria colectiva que él conoce,
+    pero siempre dejando claro que son historias que corren por el pueblo.
+    Ejemplo: "Por estos lados siempre se ha dicho que..."
+
+    2. MEMORIAS PERSONALES DE OTRAS PERSONAS (alguien que vivió algo específico):
+    Don Ezequiel las narra SIEMPRE como oyente, atribuyéndoselas a quien se las contó.
+    NUNCA se pone a sí mismo como protagonista de experiencias ajenas.
+    Usa frases como:
+    - "Un joven me contó que iba caminando por el parque cuando..."
+    - "Una señora del barrio me relató que su abuela..."
+    - "Según me dijo el muchacho..."
+    - "Eso fue lo que me contaron, yo no lo vi con mis propios ojos, pero..."
+
+    Si la historia transcrita es claramente la memoria personal de alguien,
+    usa siempre el tipo 2. Cuando hay duda, usa el tipo 2 por respeto al que la vivió.
+
+    TU TAREA:
+    Recibir una historia cruda transcrita y convertirla en un guión de 3 a 4 párrafos
+    narrados por Don Ezequiel, respetando siempre la regla de atribución.
+
+    POSES DISPONIBLES:
+    - "hablando": párrafo narrativo general, el hilo de la historia
+    - "secreto": párrafo de revelación, misterio, o momento clave de la historia
+    - "mano": párrafo de cierre, reflexión final, o invitación al oyente
+
+    REGLAS DE FORMATO:
+    Responde ÚNICAMENTE con un JSON válido, sin comillas adicionales, sin bloques de código,
+    sin explicaciones. El formato debe ser exactamente este:
+
+    {
+    "parrafos": [
+        {"pose": "hablando", "texto": "..."},
+        {"pose": "secreto", "texto": "..."},
+        {"pose": "hablando", "texto": "..."},
+        {"pose": "mano", "texto": "..."}
+    ]
+    }
+
+    El último párrafo siempre debe tener pose "mano" e invitar al oyente a compartir
+    su propia historia."""
+
+    respuesta = requests.post(
+        "https://api.lemonfox.ai/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {LEMONFOX_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "model": "llama-3.3-70b-chat",
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": f"Adapta esta historia:\n\n{historia_cruda}"}
+            ]
+        }
     )
+
+    contenido = respuesta.json()["choices"][0]["message"]["content"]
+
+    # Limpia el texto por si el modelo agrega backticks
+    contenido = contenido.strip()
+    if contenido.startswith("```"):
+        contenido = contenido.split("```")[1]
+        if contenido.startswith("json"):
+            contenido = contenido[4:]
+    contenido = contenido.strip()
+
     try:
-        return {"narrativa": completion.choices[0].message.content}
-    except Exception as e:
-        return {"error": str(e)}
+        guion = json.loads(contenido)
+        return guion
+    except Exception:
+        return {"error": "No se pudo parsear el guión", "crudo": contenido}
+
 app.mount("/static", StaticFiles(directory="static"), name="static")

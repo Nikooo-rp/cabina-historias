@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mapa de Historias — Santa Fe de Antioquia</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, serif;
+      background: #fdf6ec;
+      color: #2c2c2c;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 16px 24px;
+      background: #7b3f00;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 { font-size: 1.2rem; }
+
+    #contador {
+      font-size: 0.9rem;
+      opacity: 0.85;
+    }
+
+    #contenedor {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* --- Mapa --- */
+    #mapa { flex: 1; }
+
+    /* --- Panel lateral --- */
+    #panel {
+      width: 340px;
+      background: white;
+      border-left: 2px solid #c9a87c;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    #panel-vacio {
+      color: #888;
+      font-style: italic;
+      font-size: 0.95rem;
+      margin-top: 12px;
+    }
+
+    .historia-card {
+      background: #fdf6ec;
+      border-left: 4px solid #7b3f00;
+      border-radius: 4px;
+      padding: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .historia-card:hover { background: #f0e0c8; }
+
+    .historia-card.activa { background: #f0e0c8; border-left-color: #2c7a2c; }
+
+    .historia-card .numero {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 6px;
+    }
+
+    .historia-card .fecha {
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-top: 6px;
+    }
+
+    .historia-card .texto {
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .sin-ubicacion {
+      opacity: 0.5;
+      border-left-color: #aaa;
+    }
+
+    .sin-ubicacion .numero::after {
+      content: " · sin ubicación";
+      color: #bbb;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🗺️ Mapa de Historias — Santa Fe de Antioquia</h1>
+  <span id="contador">Cargando...</span>
+</header>
+
+<div id="contenedor">
+  <div id="mapa"></div>
+  <div id="panel">
+    <p id="panel-vacio">Haz clic en un punto del mapa o en una historia para verla aquí.</p>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // --- Inicializa el mapa ---
+  const mapa = L.map("mapa").setView([6.5567, -75.8241], 15);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap"
+  }).addTo(mapa);
+
+  const panel    = document.getElementById("panel");
+  const contador = document.getElementById("contador");
+  let cardActiva = null;
+
+  // --- Carga las historias desde el backend ---
+  async function cargarHistorias() {
+    const respuesta = await fetch(window.location.origin + "/historias");
+    const data      = await respuesta.json();
+    const historias = data.historias;
+
+    // Actualiza el contador
+    const conUbicacion = historias.filter(h => h.lat).length;
+    contador.textContent =
+      `${historias.length} historia${historias.length !== 1 ? "s" : ""} · ${conUbicacion} ubicada${conUbicacion !== 1 ? "s" : ""}`;
+
+    // Limpia el panel
+    panel.innerHTML = "";
+
+    historias.forEach(historia => {
+      // --- Tarjeta en el panel lateral ---
+      const card = document.createElement("div");
+      card.className = "historia-card" + (historia.lat ? "" : " sin-ubicacion");
+      card.innerHTML = `
+        <div class="numero">Historia #${historia.id}</div>
+        <div class="texto">${historia.texto}</div>
+        <div class="fecha">${historia.fecha} · ${historia.hora}</div>
+      `;
+
+      // --- Marcador en el mapa (solo si tiene coordenadas) ---
+      if (historia.lat) {
+        const marcador = L.marker([historia.lat, historia.lng]).addTo(mapa);
+
+        // Clic en marcador → resalta la card y hace scroll
+        marcador.on("click", () => {
+          activarCard(card);
+          card.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+
+        // Clic en card → vuela al marcador en el mapa
+        card.addEventListener("click", () => {
+          activarCard(card);
+          mapa.flyTo([historia.lat, historia.lng], 17, { duration: 1 });
+          marcador.openPopup();
+        });
+
+        // Popup del marcador con texto corto
+        const resumen = historia.texto.length > 120
+          ? historia.texto.slice(0, 120) + "..."
+          : historia.texto;
+        marcador.bindPopup(`<strong>Historia #${historia.id}</strong><br>${resumen}`);
+
+      } else {
+        // Sin ubicación — la card igual aparece pero no hace nada en el mapa
+        card.title = "Esta historia no tiene ubicación marcada";
+      }
+
+      panel.appendChild(card);
+    });
+
+    if (historias.length === 0) {
+      panel.innerHTML = "<p style='color:#888;font-style:italic'>No hay historias guardadas aún.</p>";
+    }
+  }
+
+  function activarCard(card) {
+    if (cardActiva) cardActiva.classList.remove("activa");
+    card.classList.add("activa");
+    cardActiva = card;
+  }
+
+  cargarHistorias();
+</script>
+
+</body>
+</html>
