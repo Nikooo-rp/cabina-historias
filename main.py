@@ -133,9 +133,9 @@ POSES DISPONIBLES:
             "Cuénteme pues, ¿qué sabe usted de esto?"
 
 TU TAREA:
-Convertir la historia cruda en un guión de EXACTAMENTE 4 párrafos cortos.
+Convertir la historia cruda en un guión de 4 o 5 párrafos cortos.
 El primero siempre es "saludo", el último siempre es "mano".
-Cada párrafo máximo 3 frases. Sin relleno, sin moralejas, sin repeticiones.
+Cada párrafo máximo 4 frases. Sin relleno, sin moralejas, sin repeticiones.
 
 FORMATO — responde ÚNICAMENTE con este JSON válido, sin explicaciones ni backticks:
 
