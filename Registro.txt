@@ -1,0 +1,24 @@
+{
+  "parrafos": [
+    {
+      "pose": "saludo",
+      "texto": "Buenas tardes tenga usted. Siéntese pues, que hoy le tengo una historia de por estos lados."
+    },
+    {
+      "pose": "hablando",
+      "texto": "Me contaron que en la esquina del parque de Santa Bárbara, casi siempre después de la medianoche, se veía una sombra oscura que pasaba de un lado a otro, esperando quién la llamaba o le hablara. Según me dijo un señor del pueblo, era como si estuviera esperando a alguien, pero no sabían a quién ni por qué."
+    },
+    {
+      "pose": "secreto",
+      "texto": "Pero según me relataron, al final alguien se atrevió a hablarle a esa sombra y resultó ser el espíritu de Doña Clotilde, la hija de Don Albeiro, que se había muerto hace como 50 años. Dizque se volvió común que la gente fuera a preguntarle cosas, y algunos decían que obtenían respuestas misteriosas."
+    },
+    {
+      "pose": "hablando",
+      "texto": "Eso fue lo que me contaron, yo no lo vi con mis propios ojos, pero me han dicho que si te quedas por la noche y esperas a que el pueblo se quede en silencio, todavía se puede encontrar la sombra de Doña Clotilde. Vea pues, es una historia que corre por el pueblo, y cada uno puede creer lo que quiera."
+    },
+    {
+      "pose": "mano",
+      "texto": "¿Y usted, no tendrá alguna historia guardada de por estos lados?"
+    }
+  ]
+}
