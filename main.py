@@ -21,9 +21,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# APIs
 LEMONFOX_API_KEY  = os.getenv("API_KEY")
+ELEVENLABS_API_KEY = os.getenv("11LAB_KEY")
+ELEVENLABS_VOICE_ID = "KbQNOXh5ZzvuCtEzbdge"
+
+# Archivos
 ARCHIVO_HISTORIAS = "historias.jsonl"
-ARCHIVO_GUIONES   = "guiones.jsonl"  # ← NUEVO
+ARCHIVO_GUIONES   = "guiones.jsonl"
 
 client = OpenAI(
     api_key=LEMONFOX_API_KEY,
@@ -162,7 +167,7 @@ def corregir_transcripcion(texto: str) -> str:
         texto = re.sub(re.escape(error), correcto, texto, flags=re.IGNORECASE)
     return texto
 
-# ─── Helpers de archivo ← NUEVO ──────────────────────────────────────────────
+# ─── Helpers de archivo ───────────────────────────────────────────────────────
 
 def leer_archivo(path: str) -> list:
     if not os.path.exists(path):
@@ -179,7 +184,7 @@ def agregar_linea(path: str, registro: dict):
     with open(path, "a", encoding="utf-8") as f:
         f.write(json.dumps(registro, ensure_ascii=False) + "\n")
 
-# ─── Lógica de guión ← NUEVO ─────────────────────────────────────────────────
+# ─── Lógica de guión          ─────────────────────────────────────────────────
 
 def llamar_llm(texto: str) -> str:
     respuesta = requests.post(
@@ -297,8 +302,6 @@ async def ubicar(request: Request):
     escribir_archivo(ARCHIVO_HISTORIAS, historias)
     return {"ok": True}
 
-# ─── Endpoints nuevos de guión ← NUEVO ───────────────────────────────────────
-
 @app.get("/guiones")
 def ver_guiones():
     guiones = leer_archivo(ARCHIVO_GUIONES)
@@ -365,5 +368,90 @@ async def corregir(request: Request):
         return {"ok": True, "guion": guion}
     except Exception as e:
         return {"error": str(e)}
+    
+@app.post("/tts")
+async def tts(request: Request):
+    datos = await request.json()
+    texto = datos.get("texto", "")
+
+    respuesta = requests.post(
+        f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}",
+        headers={
+            "xi-api-key": ELEVENLABS_API_KEY,
+            "Content-Type": "application/json"
+        },
+        json={
+            "text": texto,
+            "model_id": "eleven_multilingual_v2",
+            "voice_settings": {
+                "stability": 0.75,
+                "similarity_boost": 0.85,
+                "style": 0.4,
+                "use_speaker_boost": True
+            }
+        }
+    )
+
+    respuesta.raise_for_status()
+    from fastapi.responses import Response
+    return Response(
+        content=respuesta.content,
+        media_type="audio/mpeg"
+    )
+
+@app.get("/historia-aleatoria")
+def historia_aleatoria():
+    guiones = leer_archivo(ARCHIVO_GUIONES)
+    if not guiones:
+        return {"error": "No hay historias aún"}
+    import random
+    return random.choice(guiones)
+
+SYSTEM_PROMPT_GRACIAS = """Eres Don Ezequiel, un narrador mayor de Santa Fe de Antioquia.
+Alguien acaba de contarte una historia. Responde con UN solo párrafo muy breve (máximo 2 frases)
+agradeciéndole de forma cálida y diciéndole que vas a guardar esa historia para contársela a otros.
+Usa vocabulario antioqueño natural. Solo el texto, sin JSON, sin explicaciones."""
+
+@app.post("/gracias")
+async def generar_gracias(request: Request):
+    datos = await request.json()
+    texto = datos.get("texto", "")
+    contenido = llamar_llm_simple(texto)
+    return {"texto": contenido}
+
+def llamar_llm_simple(texto: str) -> str:
+    r = requests.post(
+        "https://api.lemonfox.ai/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {LEMONFOX_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "model": "llama-3.3-70b-chat",
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT_GRACIAS},
+                {"role": "user", "content": f"La historia que me contaron fue:\n\n{texto}"}
+            ],
+            "temperature": 0.6,
+            "max_tokens": 120
+        }
+    )
+    return r.json()["choices"][0]["message"]["content"].strip()
+
+@app.get("/frases-transicion")
+def frases_transicion():
+    import random
+    transicion = random.choice([
+        "Y dígame, ¿en qué rincón del pueblo fue que ocurrió eso?",
+        "¿Y dónde fue que pasó todo eso, usté sabe?",
+        "Cuénteme, ¿en qué parte del pueblo ocurrió esa historia?",
+        "¿Y en qué lugar de por aquí fue que sucedió eso?",
+    ])
+    despedida = random.choice([
+        "Que le vaya bien, pues. Si quiere, puede ver dónde están todas las historias del pueblo en el mapa.",
+        "Vaya con Dios. Y si tiene curiosidad, puede echarle un ojo al mapa con las historias de por aquí.",
+        "Bueno pues, fue un gusto. Puede ver el mapa con todas las historias si le provoca.",
+    ])
+    return {"transicion": transicion, "despedida": despedida}
 
 app.mount("/static", StaticFiles(directory="static"), name="static")

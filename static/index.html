@@ -2,260 +2,707 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Cabina de Historias</title>
-
-  <!-- Leaflet CSS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cabina de Historias — Santa Fe de Antioquia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
+ 
   <style>
+    :root {
+      --crema:      #f0e6d3;
+      --crema-dark: #e4d5bc;
+      --tierra:     #3b1f0e;
+      --cafe:       #5c2d0e;
+      --cafe-mid:   #8b5a3a;
+      --dorado:     #c9943a;
+      --texto:      #2a1505;
+      --gris:       #9a856e;
+      --blanco:     #fdf8f2;
+    }
+ 
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+ 
     body {
-      font-family: Georgia, serif;
-      max-width: 700px;
-      margin: 40px auto;
-      padding: 0 24px;
-      background: #fdf6ec;
-      color: #2c2c2c;
+      font-family: 'Lora', Georgia, serif;
+      background: var(--crema);
+      color: var(--texto);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
-
-    h1 { color: #7b3f00; }
-
-    button {
+ 
+    /* ── Header ── */
+    #header {
+      background: var(--cafe);
       padding: 14px 28px;
-      font-size: 1rem;
-      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 0 0 20px 20px;
+      box-shadow: 0 4px 20px rgba(59,31,14,0.2);
+      z-index: 10;
+      position: relative;
+    }
+ 
+    #header-titulo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--crema);
+      text-align: center;
+      flex: 1;
+      line-height: 1.3;
+    }
+ 
+    #header-titulo span {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 400;
+      font-style: italic;
+      opacity: 0.75;
+      font-family: 'Lora', serif;
+    }
+ 
+    .header-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(240,230,211,0.15);
       border: none;
-      border-radius: 8px;
-      margin-right: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      color: var(--crema);
+      transition: background 0.2s;
     }
-
-    #btn-grabar  { background: #7b3f00; color: white; }
-    #btn-detener { background: #555; color: white; display: none; }
-    #btn-confirmar-ubicacion {
-      background: #2c7a2c;
-      color: white;
-      display: none;
-      margin-top: 12px;
+ 
+    .header-btn:hover { background: rgba(240,230,211,0.25); }
+ 
+    /* ── Layout principal ── */
+    #app {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
     }
-
-    #estado {
-      margin: 20px 0;
+ 
+    /* ── Lado izquierdo — Don Ezequiel ── */
+    #lado-personaje {
+      width: 36%;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      overflow: hidden;
+      background: linear-gradient(to bottom, var(--crema) 0%, var(--crema-dark) 100%);
+    }
+ 
+    #lado-personaje::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 40px;
+      background: linear-gradient(to right, transparent, rgba(228,213,188,0.6));
+      pointer-events: none;
+    }
+ 
+    #lado-personaje::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 80px;
+      background: radial-gradient(ellipse at 50% 100%, rgba(92,45,14,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+ 
+    .pose {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 90vh;
+      width: auto;
+      object-fit: contain;
+      opacity: 0;
+      transition: opacity 0.45s ease;
+      filter: drop-shadow(0 12px 32px rgba(59,31,14,0.15));
+    }
+ 
+    .pose.activa { opacity: 1; }
+ 
+    /* ── Lado derecho — panel ── */
+    #lado-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 28px 24px 20px;
+      gap: 16px;
+      overflow: hidden;
+      background: var(--crema);
+    }
+ 
+    /* ── Burbujas ── */
+    #dialogo {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-right: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--crema-dark) transparent;
+    }
+ 
+    #dialogo::-webkit-scrollbar { width: 3px; }
+    #dialogo::-webkit-scrollbar-thumb { background: var(--crema-dark); border-radius: 2px; }
+ 
+    .burbuja {
+      max-width: 90%;
+      padding: 14px 18px;
+      font-size: 1.05rem;
+      line-height: 1.65;
+      animation: aparecer 0.35s ease forwards;
+      opacity: 0;
+    }
+ 
+    @keyframes aparecer {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+ 
+    .burbuja.ezequiel {
+      background: var(--cafe);
+      color: var(--crema);
+      border-radius: 4px 20px 20px 20px;
+      align-self: flex-start;
+      box-shadow: 0 2px 12px rgba(59,31,14,0.12);
+    }
+ 
+    .burbuja.visitante {
+      background: var(--blanco);
+      color: var(--texto);
+      border: 1px solid var(--crema-dark);
+      border-radius: 20px 20px 4px 20px;
+      align-self: flex-end;
       font-style: italic;
-      color: #666;
+      box-shadow: 0 2px 8px rgba(59,31,14,0.06);
     }
-
-    #resultado {
-      margin-top: 24px;
-      padding: 16px;
-      background: white;
-      border-left: 4px solid #7b3f00;
-      border-radius: 4px;
-      white-space: pre-wrap;
-      display: none;
-    }
-
-    #seccion-mapa { display: none; margin-top: 32px; }
-
-    #seccion-mapa h2 { color: #7b3f00; font-size: 1.1rem; }
-
-    #mapa {
-      height: 420px;
-      border-radius: 8px;
-      border: 2px solid #c9a87c;
-      margin-top: 12px;
-    }
-
-    #instruccion-mapa {
+ 
+    .burbuja.sistema {
+      background: transparent;
+      color: var(--gris);
+      font-size: 0.82rem;
+      align-self: center;
       font-style: italic;
-      color: #555;
-      margin-top: 8px;
-      font-size: 0.95rem;
+      text-align: center;
+      padding: 4px 0;
     }
-
-    #ubicacion-elegida {
-      margin-top: 10px;
+ 
+    /* Puntos de carga */
+    .puntos {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+      padding: 14px 20px;
+      background: var(--cafe);
+      border-radius: 4px 20px 20px 20px;
+      align-self: flex-start;
+      box-shadow: 0 2px 12px rgba(59,31,14,0.12);
+    }
+ 
+    .puntos span {
+      width: 7px; height: 7px;
+      background: var(--crema);
+      border-radius: 50%;
+      opacity: 0.4;
+      animation: pulso 1.2s ease-in-out infinite;
+    }
+ 
+    .puntos span:nth-child(2) { animation-delay: 0.2s; }
+    .puntos span:nth-child(3) { animation-delay: 0.4s; }
+ 
+    @keyframes pulso {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50%       { opacity: 0.9; transform: scale(1.1); }
+    }
+ 
+    /* ── Transcripción visitante ── */
+    #transcripcion-wrap {
+      display: none;
+      background: var(--blanco);
+      border: 1px solid var(--crema-dark);
+      border-radius: 12px;
+      padding: 12px 16px;
       font-size: 0.9rem;
-      color: #333;
-      display: none;
+      color: var(--texto);
+      font-style: italic;
+      line-height: 1.6;
     }
+ 
+    /* ── Mapa de ubicación ── */
+    #seccion-mapa {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+ 
+    #seccion-mapa p {
+      font-size: 0.85rem;
+      color: var(--gris);
+      font-style: italic;
+    }
+ 
+    #mapa {
+      height: 200px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--crema-dark);
+      box-shadow: 0 2px 12px rgba(59,31,14,0.08);
+    }
+ 
+    /* ── Controles ── */
+    #controles {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+ 
+    #estado-texto {
+      font-size: 0.85rem;
+      color: var(--gris);
+      font-style: italic;
+      text-align: center;
+      min-height: 18px;
+    }
+ 
+    #botones {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+ 
+    .btn {
+      font-family: 'Lora', serif;
+      font-size: 0.95rem;
+      padding: 13px 24px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+ 
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+ 
+    #btn-grabar {
+      background: var(--cafe);
+      color: var(--crema);
+      display: none;
+      flex: 1;
+      font-weight: 500;
+      box-shadow: 0 4px 16px rgba(92,45,14,0.25);
+    }
+ 
+    #btn-grabar:hover:not(:disabled) {
+      background: var(--tierra);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(92,45,14,0.3);
+    }
+ 
+    #btn-detener {
+      background: var(--crema-dark);
+      color: var(--cafe);
+      border: 1px solid rgba(92,45,14,0.2);
+      display: none;
+      flex: 1;
+    }
+ 
+    #btn-detener:hover:not(:disabled) { background: #d9c9ae; }
+ 
+    #btn-confirmar-ubicacion {
+      background: var(--cafe);
+      color: var(--crema);
+      border-radius: 50px;
+      display: none;
+      align-self: flex-start;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+ 
+    #btn-confirmar-ubicacion:hover { background: var(--tierra); }
+ 
+    #btn-mapa {
+      background: transparent;
+      color: var(--gris);
+      border: 1px solid rgba(154,133,110,0.4);
+      font-size: 0.82rem;
+      padding: 10px 16px;
+      border-radius: 50px;
+    }
+ 
+    #btn-mapa:hover { border-color: var(--cafe); color: var(--cafe); }
   </style>
 </head>
 <body>
-
-  <h1>Cabina de Historias</h1>
-  <p>Presiona <strong>Grabar</strong>, cuenta tu historia, y cuando termines presiona <strong>Detener</strong>.</p>
-
-  <button id="btn-grabar">🎙️ Grabar</button>
-  <button id="btn-detener">⏹ Detener y enviar</button>
-
-  <p id="estado">Listo para grabar.</p>
-  <div id="resultado"></div>
-
-  <!-- Sección del mapa, aparece después de transcribir -->
-  <div id="seccion-mapa">
-    <h2>¿Dónde ocurrió esta historia?</h2>
-    <p id="instruccion-mapa">Haz clic en el mapa para marcar el lugar.</p>
-    <div id="mapa"></div>
-    <p id="ubicacion-elegida"></p>
-    <button id="btn-confirmar-ubicacion">📍 Confirmar ubicación</button>
+ 
+  <!-- Header -->
+  <div id="header">
+    <button class="header-btn">☰</button>
+    <div id="header-titulo">
+      Santa Fe de Antioquia
+      <span>Historias de ayer y hoy</span>
+    </div>
+    <button class="header-btn">◎</button>
   </div>
-
-  <!-- Leaflet JS -->
+ 
+  <div id="app">
+ 
+    <!-- Personaje -->
+    <div id="lado-personaje">
+      <img class="pose activa" id="pose-idle"     src="img/idle.png"     alt="Don Ezequiel">
+      <img class="pose"        id="pose-hablando" src="img/hablando.png" alt="Don Ezequiel hablando">
+      <img class="pose"        id="pose-secreto"  src="img/secreto.png"  alt="Don Ezequiel secreto">
+      <img class="pose"        id="pose-mano"     src="img/mano.png"     alt="Don Ezequiel mano">
+    </div>
+ 
+    <!-- Panel derecho -->
+    <div id="lado-panel">
+ 
+      <div id="dialogo"></div>
+      <div id="transcripcion-wrap"></div>
+ 
+      <!-- Mapa ubicación -->
+      <div id="seccion-mapa">
+        <p>¿Dónde ocurrió esta historia? Toca el mapa para marcar el lugar.</p>
+        <div id="mapa"></div>
+        <button id="btn-confirmar-ubicacion">📍 Confirmar lugar</button>
+      </div>
+ 
+      <!-- Controles -->
+      <div id="controles">
+        <div id="estado-texto"></div>
+        <div id="botones">
+          <button class="btn" id="btn-grabar">🎙 Contar mi historia</button>
+          <button class="btn" id="btn-detener">⏹ Terminar</button>
+          <button class="btn" id="btn-mapa"
+            onclick="window.open('/static/mapa-historias.html','_blank')">
+            🗺 Ver historias
+          </button>
+        </div>
+      </div>
+ 
+    </div>
+  </div>
+ 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <script>
-    const btnGrabar    = document.getElementById("btn-grabar");
-    const btnDetener   = document.getElementById("btn-detener");
-    const btnConfirmar = document.getElementById("btn-confirmar-ubicacion");
-    const estado       = document.getElementById("estado");
-    const resultado    = document.getElementById("resultado");
-    const seccionMapa  = document.getElementById("seccion-mapa");
-    const ubicacionEl  = document.getElementById("ubicacion-elegida");
-
-    let mediaRecorder = null;
-    let chunks        = [];
-    let historiaId    = null;   // id de la historia recién guardada
-    let marcador      = null;   // marcador en el mapa
-    let coordElegida  = null;   // {lat, lng} elegido por el usuario
-    let mapa          = null;   // instancia del mapa
-
-    // --- Grabar ---
-    btnGrabar.addEventListener("click", async () => {
-      chunks = [];
-      seccionMapa.style.display = "none";
-      resultado.style.display   = "none";
-
-      let stream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch (e) {
-        estado.textContent = "❌ No se pudo acceder al micrófono.";
-        return;
-      }
-
-      mediaRecorder = new MediaRecorder(stream);
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop());
-        await enviarAudio();
-      };
-
-      mediaRecorder.start();
-      estado.textContent       = "🔴 Grabando... habla cuando quieras.";
-      btnGrabar.style.display  = "none";
-      btnDetener.style.display = "inline-block";
+    const dialogo           = document.getElementById("dialogo");
+    const estadoTexto       = document.getElementById("estado-texto");
+    const btnGrabar         = document.getElementById("btn-grabar");
+    const btnDetener        = document.getElementById("btn-detener");
+    const btnConfirmar      = document.getElementById("btn-confirmar-ubicacion");
+    const seccionMapa       = document.getElementById("seccion-mapa");
+    const transcripcionWrap = document.getElementById("transcripcion-wrap");
+ 
+    const poses = {
+      idle:     document.getElementById("pose-idle"),
+      hablando: document.getElementById("pose-hablando"),
+      secreto:  document.getElementById("pose-secreto"),
+      mano:     document.getElementById("pose-mano"),
+    };
+ 
+    let poseActual = "idle", mediaRecorder = null, chunks = [];
+    let historiaId = null, mapa = null, marcador = null;
+    let coordElegida = null, audioActual = null;
+ 
+    // Marcador SVG personalizado
+    const iconoMarcador = L.divIcon({
+      className: "",
+      html: `<svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 10 16 24 16 24S32 26 32 16C32 7.163 24.837 0 16 0z" fill="#5c2d0e"/>
+        <circle cx="16" cy="16" r="7" fill="#f0e6d3"/>
+      </svg>`,
+      iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -40]
     });
-
-    // --- Detener ---
-    btnDetener.addEventListener("click", () => {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-        estado.textContent       = "⏳ Procesando tu historia...";
-        btnDetener.style.display = "none";
-      }
+ 
+    function setPose(nombre) {
+      if (poseActual === nombre) return;
+      poses[poseActual].classList.remove("activa");
+      (poses[nombre] || poses["idle"]).classList.add("activa");
+      poseActual = nombre;
+    }
+ 
+    function agregarBurbuja(texto, tipo = "ezequiel") {
+      const div = document.createElement("div");
+      div.className = `burbuja ${tipo}`;
+      div.textContent = texto;
+      dialogo.appendChild(div);
+      dialogo.scrollTop = dialogo.scrollHeight;
+      return div;
+    }
+ 
+    function mostrarPuntos() {
+      const div = document.createElement("div");
+      div.className = "puntos";
+      div.id = "puntos-cargando";
+      div.innerHTML = "<span></span><span></span><span></span>";
+      dialogo.appendChild(div);
+      dialogo.scrollTop = dialogo.scrollHeight;
+    }
+ 
+    function quitarPuntos() {
+      const p = document.getElementById("puntos-cargando");
+      if (p) p.remove();
+    }
+ 
+    async function hablar(texto, pose) {
+  setPose(pose);
+  try {
+    const r = await fetch("/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texto })
     });
+    if (!r.ok) throw new Error(`TTS error ${r.status}`);
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio._url  = url;
+    return audio;
+  } catch(e) {
+    console.error("Error en hablar():", e, "| texto:", texto);
+    throw e; // relanza para que procesarAudio lo capture
+  }
+}
+ 
+ async function narrarGuion(guion) {
+  for (const parrafo of guion.parrafos) {
+    const pose = parrafo.pose === "saludo" ? "idle" : parrafo.pose;
 
-    // --- Enviar audio al backend ---
-    async function enviarAudio() {
-      const blob     = new Blob(chunks, { type: "audio/webm" });
-      const formData = new FormData();
-      formData.append("audio", blob, "historia.webm");
+    mostrarPuntos();
+    const audio = await hablar(parrafo.texto, pose);
+    quitarPuntos();
+    agregarBurbuja(parrafo.texto, "ezequiel");
 
-      try {
-        const respuesta = await fetch(window.location.origin + "/transcribir", {
-          method: "POST",
-          body: formData,
-        });
+    if (audioActual) { audioActual.pause(); audioActual = null; }
+    audioActual = audio;
+    audio.play();
 
-        const data = await respuesta.json();
+    await new Promise(r => {
+      audio.onended = () => { URL.revokeObjectURL(audio._url); r(); };
+    });
+  }
+  setPose("idle");
+  estadoTexto.textContent = "";
+  btnGrabar.style.display = "inline-block";
+}
 
-        if (data.error) {
-          estado.textContent = "❌ Error: " + data.error;
-          return;
-        }
+async function arrancar() {
+  estadoTexto.textContent = "Don Ezequiel está recordando una historia...";
+  mostrarPuntos();
+  try {
+    const r    = await fetch("/historia-aleatoria");
+    const data = await r.json();
+    quitarPuntos();
+    estadoTexto.textContent = "";
 
-        historiaId = data.numero;
-
-        resultado.style.display = "block";
-        resultado.textContent   = data.texto;
-        estado.textContent      = `✅ Historia #${data.numero} guardada. Ahora marca dónde ocurrió.`;
-
-        mostrarMapa();
-
-      } catch (err) {
-        estado.textContent = "❌ No se pudo conectar con el servidor.";
-        console.error(err);
-      } finally {
-        btnGrabar.style.display = "inline-block";
-      }
+    if (data.error) {
+      const texto = "Buenas tardes tenga usted. Aún no tengo historias que contarle, pero puede ser el primero en compartir una.";
+      agregarBurbuja(texto, "ezequiel");
+      const audio = await hablar(texto, "idle");  // ← ahora llama .play()
+      audio.play();
+      await new Promise(r => { audio.onended = () => { URL.revokeObjectURL(audio._url); r(); }; });
+      setPose("idle");
+      btnGrabar.style.display = "inline-block";
+      return;
     }
 
-    // --- Mostrar el mapa centrado en Santa Fe de Antioquia ---
-    function mostrarMapa() {
-      seccionMapa.style.display      = "block";
-      btnConfirmar.style.display     = "none";
-      ubicacionEl.style.display      = "none";
-      coordElegida                   = null;
+    await narrarGuion(data);
 
-      // Si el mapa ya existe, solo lo recentra
-      if (mapa) {
-        mapa.setView([6.5567, -75.8241], 15);
-        if (marcador) { mapa.removeLayer(marcador); marcador = null; }
-        return;
-      }
+  } catch(e) {
+    quitarPuntos();
+    agregarBurbuja("(No se pudo conectar con el servidor)", "sistema");
+    estadoTexto.textContent = "";
+  }
+}
 
-      // Crea el mapa la primera vez
-      mapa = L.map("mapa").setView([6.5567, -75.8241], 15);
+  btnGrabar.addEventListener("click", async () => {
+    chunks = [];
+    seccionMapa.style.display       = "none";
+    transcripcionWrap.style.display = "none";
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch(e) {
+      estadoTexto.textContent = "❌ No se pudo acceder al micrófono.";
+      return;
+    }
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+    mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      await procesarAudio();
+    };
+    mediaRecorder.start();
+    setPose("idle");
+    estadoTexto.textContent      = "🔴 Escuchando...";
+    btnGrabar.style.display      = "none";
+    btnDetener.style.display     = "inline-block";
+    agregarBurbuja("(El visitante está contando una historia...)", "sistema");
+  });
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap"
-      }).addTo(mapa);
+  btnDetener.addEventListener("click", () => {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      estadoTexto.textContent  = "⏳ Transcribiendo...";
+      btnDetener.style.display = "none";
+    }
+  });
+ 
+  async function procesarAudio() {
+    const blob = new Blob(chunks, { type: "audio/webm" });
+    const fd   = new FormData();
+    fd.append("audio", blob, "historia.webm");
 
-      // Clic en el mapa → pone o mueve el marcador
-      mapa.on("click", (e) => {
-        coordElegida = { lat: e.latlng.lat, lng: e.latlng.lng };
+    try {
+    // 1. Transcribir
+    const r1   = await fetch("/transcribir", { method: "POST", body: fd });
+    const data = await r1.json();
 
-        if (marcador) {
-          marcador.setLatLng(e.latlng);
-        } else {
-          marcador = L.marker(e.latlng).addTo(mapa);
-        }
-
-        ubicacionEl.style.display = "block";
-        ubicacionEl.textContent   =
-          `📍 Lugar marcado: ${coordElegida.lat.toFixed(5)}, ${coordElegida.lng.toFixed(5)}`;
-        btnConfirmar.style.display = "inline-block";
-      });
+    if (data.error) {
+      estadoTexto.textContent = "❌ Error al transcribir.";
+      btnGrabar.style.display = "inline-block";
+      return;
     }
 
-    // --- Confirmar ubicación ---
-    btnConfirmar.addEventListener("click", async () => {
+    historiaId = data.numero;
+    transcripcionWrap.style.display = "block";
+    transcripcionWrap.textContent   = data.texto;
+    agregarBurbuja(data.texto, "visitante");
+
+    estadoTexto.textContent = "Don Ezequiel está escuchando...";
+    setPose("idle");
+    await new Promise(r => setTimeout(r, 1200));
+    estadoTexto.textContent = "";
+
+    // 2. Don Ezequiel agradece brevemente (sin narrar el guión)
+    const rg      = await fetch("/gracias", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ texto: data.texto })
+    });
+    const gracias = await rg.json();
+
+    mostrarPuntos();
+    const audioGracias = await hablar(gracias.texto, "mano");
+    quitarPuntos();
+    agregarBurbuja(gracias.texto, "ezequiel");
+    audioGracias.play();
+    await new Promise(r => { audioGracias.onended = () => { URL.revokeObjectURL(audioGracias._url); r(); }; });
+
+    // 3. Pide las frases de transición y despedida
+    console.log("Paso 3: pidiendo frases de transición...");
+    const rf     = await fetch("/frases-transicion");
+    console.log("Respuesta frases:", rf.status);
+    const frases = await rf.json();
+    console.log("Frases:", frases);
+
+    // 4. Don Ezequiel pregunta por el lugar — pose "mano" porque está invitando
+    mostrarPuntos();
+    console.log("Paso 4: generando audio de transición...");
+    const audioTransicion = await hablar(frases.transicion, "mano");
+    console.log("Audio listo:", audioTransicion);
+    quitarPuntos();
+    agregarBurbuja(frases.transicion, "ezequiel");
+    audioTransicion.play();
+    await new Promise(r => { audioTransicion.onended = () => { URL.revokeObjectURL(audioTransicion._url); r(); }; });
+
+    // 5. Aparece el mapa
+    setPose("idle");
+    mostrarMapaUbicacion();
+
+    // 6. Cuando el visitante confirma, Don Ezequiel se despide
+    btnConfirmar.onclick = async () => {
       if (!coordElegida || !historiaId) return;
 
-      try {
-        await fetch(window.location.origin + "/ubicar", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: historiaId,
-            lat: coordElegida.lat,
-            lng: coordElegida.lng,
-          }),
+      await fetch("/ubicar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: historiaId, lat: coordElegida.lat, lng: coordElegida.lng })
+      });
+
+      seccionMapa.style.display = "none";
+      agregarBurbuja("(Historia ubicada en el mapa ✓)", "sistema");
+
+      // Don Ezequiel se despide
+      mostrarPuntos();
+      const audioDespedida = await hablar(frases.despedida, "mano");
+      quitarPuntos();
+      agregarBurbuja(frases.despedida, "ezequiel");
+      audioDespedida.play();
+      await new Promise(r => { audioDespedida.onended = () => { URL.revokeObjectURL(audioDespedida._url); r(); }; });
+
+      // Ofrece ver el mapa
+      setPose("idle");
+      const btnVerMapa = document.createElement("button");
+      btnVerMapa.className = "btn";
+      btnVerMapa.id = "btn-ver-mapa-final";
+      btnVerMapa.textContent = "🗺 Ver todas las historias";
+      btnVerMapa.style.cssText = "background:var(--cafe);color:var(--crema);margin-top:4px;";
+      btnVerMapa.onclick = () => window.open("/static/mapa-historias.html", "_blank");
+      dialogo.appendChild(btnVerMapa);
+      dialogo.scrollTop = dialogo.scrollHeight;
+
+      btnGrabar.style.display = "inline-block";
+    };
+
+    } catch(e) {
+  console.error("Error completo:", e);
+  console.error("Mensaje:", e.message);
+  estadoTexto.textContent = "❌ No se pudo conectar.";
+  btnGrabar.style.display = "inline-block";
+}
+}
+ 
+    function mostrarMapaUbicacion() {
+      seccionMapa.style.display  = "flex";
+      btnConfirmar.style.display = "none";
+      coordElegida               = null;
+      if (!mapa) {
+        mapa = L.map("mapa").setView([6.5567, -75.8241], 15);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap"
+        }).addTo(mapa);
+        mapa.on("click", (e) => {
+          coordElegida = { lat: e.latlng.lat, lng: e.latlng.lng };
+          if (marcador) { marcador.setLatLng(e.latlng); }
+          else { marcador = L.marker(e.latlng, { icon: iconoMarcador }).addTo(mapa); }
+          btnConfirmar.style.display = "inline-block";
         });
-
-        estado.textContent         = "🗺️ Ubicación guardada. ¡Muchas gracias!";
-        btnConfirmar.style.display = "none";
-        seccionMapa.style.display  = "none";
-
-      } catch (err) {
-        estado.textContent = "❌ No se pudo guardar la ubicación.";
-        console.error(err);
+      } else {
+        mapa.setView([6.5567, -75.8241], 15);
+        if (marcador) { mapa.removeLayer(marcador); marcador = null; }
+        setTimeout(() => mapa.invalidateSize(), 100);
       }
+    }
+ 
+    btnConfirmar.addEventListener("click", async () => {
+      if (!coordElegida || !historiaId) return;
+      await fetch("/ubicar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: historiaId, lat: coordElegida.lat, lng: coordElegida.lng })
+      });
+      seccionMapa.style.display = "none";
+      agregarBurbuja("(Historia ubicada en el mapa ✓)", "sistema");
     });
+ 
+    arrancar();
   </script>
-
 </body>
 </html>
+ 
