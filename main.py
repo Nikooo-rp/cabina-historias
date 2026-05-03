@@ -26,7 +26,7 @@ app.add_middleware(
 # APIs
 LEMONFOX_API_KEY    = os.getenv("API_KEY")
 ELEVENLABS_API_KEY  = os.getenv("11LAB_KEY")
-ELEVENLABS_VOICE_ID = "nGwnc9b9Cu64tHKjIvRt"
+ELEVENLABS_VOICE_ID = "gUMwNXyuudv6WujOBL4s"
 
 # Archivos y carpetas
 ARCHIVO_HISTORIAS = "historias.jsonl"
