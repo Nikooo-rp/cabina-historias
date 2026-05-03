@@ -330,9 +330,8 @@
         fechaEl.textContent = `${h.fecha} · ${h.hora}`;
         card.appendChild(fechaEl);
 
-        // Botón "Que Don Ezequiel la cuente" (solo historias con guión)
-        if (tieneUb) {
-          const btnContar = document.createElement("button");
+        // Botón "Que Don Ezequiel la cuente"
+        const btnContar = document.createElement("button");
           btnContar.className = "btn-contar";
           btnContar.textContent = "🎙 Que Don Ezequiel la cuente";
           btnContar.addEventListener("click", (e) => {
@@ -340,7 +339,6 @@
             window.location.href = `/static/index.html?historia=${h.id}`;
           });
           card.appendChild(btnContar);
-        }
 
         // Marcador en el mapa
         if (tieneUb) {
