@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
- 
+
   <style>
     :root {
       --crema:      #f0e6d3;
@@ -20,9 +20,9 @@
       --gris:       #9a856e;
       --blanco:     #fdf8f2;
     }
- 
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
- 
+
     body {
       font-family: 'Lora', Georgia, serif;
       background: var(--crema);
@@ -32,8 +32,7 @@
       display: flex;
       flex-direction: column;
     }
- 
-    /* ── Header ── */
+
     #header {
       background: var(--cafe);
       padding: 14px 28px;
@@ -45,7 +44,7 @@
       z-index: 10;
       position: relative;
     }
- 
+
     #header-titulo {
       font-family: 'Playfair Display', serif;
       font-size: 1.05rem;
@@ -55,7 +54,7 @@
       flex: 1;
       line-height: 1.3;
     }
- 
+
     #header-titulo span {
       display: block;
       font-size: 0.75rem;
@@ -64,7 +63,7 @@
       opacity: 0.75;
       font-family: 'Lora', serif;
     }
- 
+
     .header-btn {
       width: 40px; height: 40px;
       border-radius: 50%;
@@ -78,17 +77,15 @@
       color: var(--crema);
       transition: background 0.2s;
     }
- 
+
     .header-btn:hover { background: rgba(240,230,211,0.25); }
- 
-    /* ── Layout principal ── */
+
     #app {
       display: flex;
       flex: 1;
       overflow: hidden;
     }
- 
-    /* ── Lado izquierdo — Don Ezequiel ── */
+
     #lado-personaje {
       width: 36%;
       position: relative;
@@ -98,7 +95,7 @@
       overflow: hidden;
       background: linear-gradient(to bottom, var(--crema) 0%, var(--crema-dark) 100%);
     }
- 
+
     #lado-personaje::after {
       content: '';
       position: absolute;
@@ -107,7 +104,7 @@
       background: linear-gradient(to right, transparent, rgba(228,213,188,0.6));
       pointer-events: none;
     }
- 
+
     #lado-personaje::before {
       content: '';
       position: absolute;
@@ -116,7 +113,7 @@
       background: radial-gradient(ellipse at 50% 100%, rgba(92,45,14,0.12) 0%, transparent 70%);
       pointer-events: none;
     }
- 
+
     .pose {
       position: absolute;
       bottom: 0;
@@ -129,10 +126,9 @@
       transition: opacity 0.45s ease;
       filter: drop-shadow(0 12px 32px rgba(59,31,14,0.15));
     }
- 
+
     .pose.activa { opacity: 1; }
- 
-    /* ── Lado derecho — panel ── */
+
     #lado-panel {
       flex: 1;
       display: flex;
@@ -142,8 +138,7 @@
       overflow: hidden;
       background: var(--crema);
     }
- 
-    /* ── Burbujas ── */
+
     #dialogo {
       flex: 1;
       overflow-y: auto;
@@ -154,10 +149,10 @@
       scrollbar-width: thin;
       scrollbar-color: var(--crema-dark) transparent;
     }
- 
+
     #dialogo::-webkit-scrollbar { width: 3px; }
     #dialogo::-webkit-scrollbar-thumb { background: var(--crema-dark); border-radius: 2px; }
- 
+
     .burbuja {
       max-width: 90%;
       padding: 14px 18px;
@@ -166,12 +161,12 @@
       animation: aparecer 0.35s ease forwards;
       opacity: 0;
     }
- 
+
     @keyframes aparecer {
       from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
     }
- 
+
     .burbuja.ezequiel {
       background: var(--cafe);
       color: var(--crema);
@@ -179,7 +174,7 @@
       align-self: flex-start;
       box-shadow: 0 2px 12px rgba(59,31,14,0.12);
     }
- 
+
     .burbuja.visitante {
       background: var(--blanco);
       color: var(--texto);
@@ -189,7 +184,7 @@
       font-style: italic;
       box-shadow: 0 2px 8px rgba(59,31,14,0.06);
     }
- 
+
     .burbuja.sistema {
       background: transparent;
       color: var(--gris);
@@ -199,8 +194,7 @@
       text-align: center;
       padding: 4px 0;
     }
- 
-    /* Puntos de carga */
+
     .puntos {
       display: inline-flex;
       gap: 5px;
@@ -211,7 +205,7 @@
       align-self: flex-start;
       box-shadow: 0 2px 12px rgba(59,31,14,0.12);
     }
- 
+
     .puntos span {
       width: 7px; height: 7px;
       background: var(--crema);
@@ -219,16 +213,15 @@
       opacity: 0.4;
       animation: pulso 1.2s ease-in-out infinite;
     }
- 
+
     .puntos span:nth-child(2) { animation-delay: 0.2s; }
     .puntos span:nth-child(3) { animation-delay: 0.4s; }
- 
+
     @keyframes pulso {
       0%, 100% { opacity: 0.2; transform: scale(0.8); }
       50%       { opacity: 0.9; transform: scale(1.1); }
     }
- 
-    /* ── Transcripción visitante ── */
+
     #transcripcion-wrap {
       display: none;
       background: var(--blanco);
@@ -240,20 +233,19 @@
       font-style: italic;
       line-height: 1.6;
     }
- 
-    /* ── Mapa de ubicación ── */
+
     #seccion-mapa {
       display: none;
       flex-direction: column;
       gap: 8px;
     }
- 
+
     #seccion-mapa p {
       font-size: 0.85rem;
       color: var(--gris);
       font-style: italic;
     }
- 
+
     #mapa {
       height: 200px;
       border-radius: 16px;
@@ -261,14 +253,21 @@
       border: 1px solid var(--crema-dark);
       box-shadow: 0 2px 12px rgba(59,31,14,0.08);
     }
- 
-    /* ── Controles ── */
+
+    /* Botones del mapa */
+    #botones-mapa {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
     #controles {
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
- 
+
     #estado-texto {
       font-size: 0.85rem;
       color: var(--gris);
@@ -276,13 +275,13 @@
       text-align: center;
       min-height: 18px;
     }
- 
+
     #botones {
       display: flex;
       gap: 10px;
       align-items: center;
     }
- 
+
     .btn {
       font-family: 'Lora', serif;
       font-size: 0.95rem;
@@ -292,9 +291,9 @@
       cursor: pointer;
       transition: all 0.2s ease;
     }
- 
+
     .btn:disabled { opacity: 0.35; cursor: not-allowed; }
- 
+
     #btn-grabar {
       background: var(--cafe);
       color: var(--crema);
@@ -303,13 +302,13 @@
       font-weight: 500;
       box-shadow: 0 4px 16px rgba(92,45,14,0.25);
     }
- 
+
     #btn-grabar:hover:not(:disabled) {
       background: var(--tierra);
       transform: translateY(-1px);
       box-shadow: 0 6px 20px rgba(92,45,14,0.3);
     }
- 
+
     #btn-detener {
       background: var(--crema-dark);
       color: var(--cafe);
@@ -317,24 +316,41 @@
       display: none;
       flex: 1;
     }
- 
+
     #btn-detener:hover:not(:disabled) { background: #d9c9ae; }
- 
+
     #btn-confirmar-ubicacion {
       background: var(--cafe);
       color: var(--crema);
       border-radius: 50px;
       display: none;
-      align-self: flex-start;
       padding: 10px 20px;
       font-size: 0.9rem;
+      font-family: 'Lora', serif;
       border: none;
       cursor: pointer;
       transition: all 0.2s;
     }
- 
+
     #btn-confirmar-ubicacion:hover { background: var(--tierra); }
- 
+
+    #btn-sin-ubicacion {
+      background: transparent;
+      color: var(--gris);
+      border: 1px solid rgba(154,133,110,0.4);
+      border-radius: 50px;
+      padding: 10px 20px;
+      font-size: 0.85rem;
+      font-family: 'Lora', serif;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #btn-sin-ubicacion:hover {
+      border-color: var(--cafe-mid);
+      color: var(--cafe-mid);
+    }
+
     #btn-mapa {
       background: transparent;
       color: var(--gris);
@@ -343,13 +359,12 @@
       padding: 10px 16px;
       border-radius: 50px;
     }
- 
+
     #btn-mapa:hover { border-color: var(--cafe); color: var(--cafe); }
   </style>
 </head>
 <body>
- 
-  <!-- Header -->
+
   <div id="header">
     <button class="header-btn">☰</button>
     <div id="header-titulo">
@@ -358,31 +373,31 @@
     </div>
     <button class="header-btn">◎</button>
   </div>
- 
+
   <div id="app">
- 
-    <!-- Personaje -->
+
     <div id="lado-personaje">
       <img class="pose activa" id="pose-idle"     src="img/idle.png"     alt="Don Ezequiel">
       <img class="pose"        id="pose-hablando" src="img/hablando.png" alt="Don Ezequiel hablando">
       <img class="pose"        id="pose-secreto"  src="img/secreto.png"  alt="Don Ezequiel secreto">
       <img class="pose"        id="pose-mano"     src="img/mano.png"     alt="Don Ezequiel mano">
     </div>
- 
-    <!-- Panel derecho -->
+
     <div id="lado-panel">
- 
+
       <div id="dialogo"></div>
       <div id="transcripcion-wrap"></div>
- 
+
       <!-- Mapa ubicación -->
       <div id="seccion-mapa">
         <p>¿Dónde ocurrió esta historia? Toca el mapa para marcar el lugar.</p>
         <div id="mapa"></div>
-        <button id="btn-confirmar-ubicacion">📍 Confirmar lugar</button>
+        <div id="botones-mapa">
+          <button id="btn-confirmar-ubicacion">📍 Confirmar lugar</button>
+          <button id="btn-sin-ubicacion">No sé dónde ocurrió</button>
+        </div>
       </div>
- 
-      <!-- Controles -->
+
       <div id="controles">
         <div id="estado-texto"></div>
         <div id="botones">
@@ -394,10 +409,10 @@
           </button>
         </div>
       </div>
- 
+
     </div>
   </div>
- 
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const dialogo           = document.getElementById("dialogo");
@@ -405,21 +420,22 @@
     const btnGrabar         = document.getElementById("btn-grabar");
     const btnDetener        = document.getElementById("btn-detener");
     const btnConfirmar      = document.getElementById("btn-confirmar-ubicacion");
+    const btnSinUbicacion   = document.getElementById("btn-sin-ubicacion");
     const seccionMapa       = document.getElementById("seccion-mapa");
     const transcripcionWrap = document.getElementById("transcripcion-wrap");
- 
+
     const poses = {
       idle:     document.getElementById("pose-idle"),
       hablando: document.getElementById("pose-hablando"),
       secreto:  document.getElementById("pose-secreto"),
       mano:     document.getElementById("pose-mano"),
     };
- 
+
     let poseActual = "idle", mediaRecorder = null, chunks = [];
     let historiaId = null, mapa = null, marcador = null;
     let coordElegida = null, audioActual = null;
- 
-    // Marcador SVG personalizado
+    let frasesActuales = null; // guardadas para btn-sin-ubicacion
+
     const iconoMarcador = L.divIcon({
       className: "",
       html: `<svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
@@ -428,14 +444,16 @@
       </svg>`,
       iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -40]
     });
- 
+
+    // ── Poses ────────────────────────────────────────────────────────────────
     function setPose(nombre) {
       if (poseActual === nombre) return;
       poses[poseActual].classList.remove("activa");
       (poses[nombre] || poses["idle"]).classList.add("activa");
       poseActual = nombre;
     }
- 
+
+    // ── Diálogo ──────────────────────────────────────────────────────────────
     function agregarBurbuja(texto, tipo = "ezequiel") {
       const div = document.createElement("div");
       div.className = `burbuja ${tipo}`;
@@ -444,7 +462,7 @@
       dialogo.scrollTop = dialogo.scrollHeight;
       return div;
     }
- 
+
     function mostrarPuntos() {
       const div = document.createElement("div");
       div.className = "puntos";
@@ -453,225 +471,235 @@
       dialogo.appendChild(div);
       dialogo.scrollTop = dialogo.scrollHeight;
     }
- 
+
     function quitarPuntos() {
       const p = document.getElementById("puntos-cargando");
       if (p) p.remove();
     }
- 
+
+    // ── TTS ──────────────────────────────────────────────────────────────────
     async function hablar(texto, pose) {
-  setPose(pose);
-  try {
-    const r = await fetch("/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texto })
-    });
-    if (!r.ok) throw new Error(`TTS error ${r.status}`);
-    const blob = await r.blob();
-    const url  = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audio._url  = url;
-    return audio;
-  } catch(e) {
-    console.error("Error en hablar():", e, "| texto:", texto);
-    throw e; // relanza para que procesarAudio lo capture
-  }
-}
- 
- async function narrarGuion(guion) {
-  for (const parrafo of guion.parrafos) {
-    const pose = parrafo.pose === "saludo" ? "idle" : parrafo.pose;
+      setPose(pose);
+      try {
+        const r = await fetch("/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texto })
+        });
+        if (!r.ok) throw new Error(`TTS error ${r.status}`);
+        const blob  = await r.blob();
+        const url   = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio._url  = url;
+        return audio;
+      } catch(e) {
+        console.error("Error en hablar():", e, "| texto:", texto);
+        throw e;
+      }
+    }
 
-    mostrarPuntos();
-    const audio = await hablar(parrafo.texto, pose);
-    quitarPuntos();
-    agregarBurbuja(parrafo.texto, "ezequiel");
-
-    if (audioActual) { audioActual.pause(); audioActual = null; }
-    audioActual = audio;
-    audio.play();
-
-    await new Promise(r => {
-      audio.onended = () => { URL.revokeObjectURL(audio._url); r(); };
-    });
-  }
-  setPose("idle");
-  estadoTexto.textContent = "";
-  btnGrabar.style.display = "inline-block";
-}
-
-async function arrancar() {
-  estadoTexto.textContent = "Don Ezequiel está recordando una historia...";
-  mostrarPuntos();
-  try {
-    const r    = await fetch("/historia-aleatoria");
-    const data = await r.json();
-    quitarPuntos();
-    estadoTexto.textContent = "";
-
-    if (data.error) {
-      const texto = "Buenas tardes tenga usted. Aún no tengo historias que contarle, pero puede ser el primero en compartir una.";
-      agregarBurbuja(texto, "ezequiel");
-      const audio = await hablar(texto, "idle");  // ← ahora llama .play()
+    async function reproducir(audio) {
+      if (audioActual) { audioActual.pause(); audioActual = null; }
+      audioActual = audio;
       audio.play();
-      await new Promise(r => { audio.onended = () => { URL.revokeObjectURL(audio._url); r(); }; });
-      setPose("idle");
-      btnGrabar.style.display = "inline-block";
-      return;
-    }
-
-    await narrarGuion(data);
-
-  } catch(e) {
-    quitarPuntos();
-    agregarBurbuja("(No se pudo conectar con el servidor)", "sistema");
-    estadoTexto.textContent = "";
-  }
-}
-
-  btnGrabar.addEventListener("click", async () => {
-    chunks = [];
-    seccionMapa.style.display       = "none";
-    transcripcionWrap.style.display = "none";
-    let stream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch(e) {
-      estadoTexto.textContent = "❌ No se pudo acceder al micrófono.";
-      return;
-    }
-    mediaRecorder = new MediaRecorder(stream);
-    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-    mediaRecorder.onstop = async () => {
-      stream.getTracks().forEach(t => t.stop());
-      await procesarAudio();
-    };
-    mediaRecorder.start();
-    setPose("idle");
-    estadoTexto.textContent      = "🔴 Escuchando...";
-    btnGrabar.style.display      = "none";
-    btnDetener.style.display     = "inline-block";
-    agregarBurbuja("(El visitante está contando una historia...)", "sistema");
-  });
-
-  btnDetener.addEventListener("click", () => {
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-      mediaRecorder.stop();
-      estadoTexto.textContent  = "⏳ Transcribiendo...";
-      btnDetener.style.display = "none";
-    }
-  });
- 
-  async function procesarAudio() {
-    const blob = new Blob(chunks, { type: "audio/webm" });
-    const fd   = new FormData();
-    fd.append("audio", blob, "historia.webm");
-
-    try {
-    // 1. Transcribir
-    const r1   = await fetch("/transcribir", { method: "POST", body: fd });
-    const data = await r1.json();
-
-    if (data.error) {
-      estadoTexto.textContent = "❌ Error al transcribir.";
-      btnGrabar.style.display = "inline-block";
-      return;
-    }
-
-    historiaId = data.numero;
-    transcripcionWrap.style.display = "block";
-    transcripcionWrap.textContent   = data.texto;
-    agregarBurbuja(data.texto, "visitante");
-
-    estadoTexto.textContent = "Don Ezequiel está escuchando...";
-    setPose("idle");
-    await new Promise(r => setTimeout(r, 1200));
-    estadoTexto.textContent = "";
-
-    // 2. Don Ezequiel agradece brevemente (sin narrar el guión)
-    const rg      = await fetch("/gracias", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ texto: data.texto })
-    });
-    const gracias = await rg.json();
-
-    mostrarPuntos();
-    const audioGracias = await hablar(gracias.texto, "mano");
-    quitarPuntos();
-    agregarBurbuja(gracias.texto, "ezequiel");
-    audioGracias.play();
-    await new Promise(r => { audioGracias.onended = () => { URL.revokeObjectURL(audioGracias._url); r(); }; });
-
-    // 3. Pide las frases de transición y despedida
-    console.log("Paso 3: pidiendo frases de transición...");
-    const rf     = await fetch("/frases-transicion");
-    console.log("Respuesta frases:", rf.status);
-    const frases = await rf.json();
-    console.log("Frases:", frases);
-
-    // 4. Don Ezequiel pregunta por el lugar — pose "mano" porque está invitando
-    mostrarPuntos();
-    console.log("Paso 4: generando audio de transición...");
-    const audioTransicion = await hablar(frases.transicion, "mano");
-    console.log("Audio listo:", audioTransicion);
-    quitarPuntos();
-    agregarBurbuja(frases.transicion, "ezequiel");
-    audioTransicion.play();
-    await new Promise(r => { audioTransicion.onended = () => { URL.revokeObjectURL(audioTransicion._url); r(); }; });
-
-    // 5. Aparece el mapa
-    setPose("idle");
-    mostrarMapaUbicacion();
-
-    // 6. Cuando el visitante confirma, Don Ezequiel se despide
-    btnConfirmar.onclick = async () => {
-      if (!coordElegida || !historiaId) return;
-
-      await fetch("/ubicar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: historiaId, lat: coordElegida.lat, lng: coordElegida.lng })
+      await new Promise(r => {
+        audio.onended = () => { URL.revokeObjectURL(audio._url); r(); };
       });
+    }
 
-      seccionMapa.style.display = "none";
-      agregarBurbuja("(Historia ubicada en el mapa ✓)", "sistema");
+    // ── Narrar guión ─────────────────────────────────────────────────────────
+    async function narrarGuion(guion) {
+      for (const parrafo of guion.parrafos) {
+        const pose = parrafo.pose === "saludo" ? "idle" : parrafo.pose;
+        mostrarPuntos();
+        const audio = await hablar(parrafo.texto, pose);
+        quitarPuntos();
+        agregarBurbuja(parrafo.texto, "ezequiel");
+        await reproducir(audio);
+      }
+      setPose("idle");
+      estadoTexto.textContent = "";
+      btnGrabar.style.display = "inline-block";
+    }
 
-      // Don Ezequiel se despide
+    // ── Despedida (reutilizable desde confirmar y sin-ubicación) ─────────────
+    async function ejecutarDespedida(frases) {
       mostrarPuntos();
       const audioDespedida = await hablar(frases.despedida, "mano");
       quitarPuntos();
       agregarBurbuja(frases.despedida, "ezequiel");
-      audioDespedida.play();
-      await new Promise(r => { audioDespedida.onended = () => { URL.revokeObjectURL(audioDespedida._url); r(); }; });
+      await reproducir(audioDespedida);
 
-      // Ofrece ver el mapa
       setPose("idle");
+
+      // Botón para ver el mapa
       const btnVerMapa = document.createElement("button");
       btnVerMapa.className = "btn";
-      btnVerMapa.id = "btn-ver-mapa-final";
       btnVerMapa.textContent = "🗺 Ver todas las historias";
-      btnVerMapa.style.cssText = "background:var(--cafe);color:var(--crema);margin-top:4px;";
+      btnVerMapa.style.cssText = "background:var(--cafe);color:var(--crema);border:none;cursor:pointer;margin-top:4px;";
       btnVerMapa.onclick = () => window.open("/static/mapa-historias.html", "_blank");
       dialogo.appendChild(btnVerMapa);
       dialogo.scrollTop = dialogo.scrollHeight;
 
       btnGrabar.style.display = "inline-block";
-    };
+    }
 
-    } catch(e) {
-  console.error("Error completo:", e);
-  console.error("Mensaje:", e.message);
-  estadoTexto.textContent = "❌ No se pudo conectar.";
-  btnGrabar.style.display = "inline-block";
-}
-}
- 
+    // ── Arranque ─────────────────────────────────────────────────────────────
+    async function arrancar() {
+      // Detecta si viene con un ID específico desde el mapa
+      const params     = new URLSearchParams(window.location.search);
+      const idElegido  = params.get("historia");
+
+      estadoTexto.textContent = "Don Ezequiel está recordando una historia...";
+      mostrarPuntos();
+
+      try {
+        const url  = idElegido ? `/guion/${idElegido}` : "/historia-aleatoria";
+        const r    = await fetch(url);
+        const data = await r.json();
+        quitarPuntos();
+        estadoTexto.textContent = "";
+
+        if (data.error) {
+          const texto = "Buenas tardes tenga usted. Aún no tengo historias que contarle, pero puede ser el primero en compartir una.";
+          agregarBurbuja(texto, "ezequiel");
+          const audio = await hablar(texto, "idle");
+          await reproducir(audio);
+          setPose("idle");
+          btnGrabar.style.display = "inline-block";
+          return;
+        }
+
+        await narrarGuion(data);
+
+      } catch(e) {
+        quitarPuntos();
+        agregarBurbuja("(No se pudo conectar con el servidor)", "sistema");
+        estadoTexto.textContent = "";
+      }
+    }
+
+    // ── Grabar ───────────────────────────────────────────────────────────────
+    btnGrabar.addEventListener("click", async () => {
+      chunks = [];
+      seccionMapa.style.display       = "none";
+      transcripcionWrap.style.display = "none";
+
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch(e) {
+        estadoTexto.textContent = "❌ No se pudo acceder al micrófono.";
+        return;
+      }
+
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        await procesarAudio();
+      };
+
+      mediaRecorder.start();
+      setPose("idle");
+      estadoTexto.textContent      = "🔴 Escuchando...";
+      btnGrabar.style.display      = "none";
+      btnDetener.style.display     = "inline-block";
+      agregarBurbuja("(El visitante está contando una historia...)", "sistema");
+    });
+
+    // ── Detener ──────────────────────────────────────────────────────────────
+    btnDetener.addEventListener("click", () => {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        estadoTexto.textContent  = "⏳ Transcribiendo...";
+        btnDetener.style.display = "none";
+      }
+    });
+
+    // ── Procesar audio ────────────────────────────────────────────────────────
+    async function procesarAudio() {
+      const blob = new Blob(chunks, { type: "audio/webm" });
+      const fd   = new FormData();
+      fd.append("audio", blob, "historia.webm");
+
+      try {
+        // 1. Transcribir
+        const r1   = await fetch("/transcribir", { method: "POST", body: fd });
+        const data = await r1.json();
+
+        if (data.error) {
+          estadoTexto.textContent = "❌ Error al transcribir.";
+          btnGrabar.style.display = "inline-block";
+          return;
+        }
+
+        historiaId = data.numero;
+        transcripcionWrap.style.display = "block";
+        transcripcionWrap.textContent   = data.texto;
+        agregarBurbuja(data.texto, "visitante");
+
+        estadoTexto.textContent = "Don Ezequiel está escuchando...";
+        setPose("idle");
+        await new Promise(r => setTimeout(r, 1200));
+        estadoTexto.textContent = "";
+
+        // 2. Don Ezequiel agradece
+        const rg      = await fetch("/gracias", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texto: data.texto })
+        });
+        const gracias = await rg.json();
+
+        mostrarPuntos();
+        const audioGracias = await hablar(gracias.texto, "mano");
+        quitarPuntos();
+        agregarBurbuja(gracias.texto, "ezequiel");
+        await reproducir(audioGracias);
+
+        // 3. Frases de transición y despedida
+        const rf     = await fetch("/frases-transicion");
+        const frases = await rf.json();
+        frasesActuales = frases; // guardadas para btn-sin-ubicacion
+
+        // 4. Pregunta por el lugar
+        mostrarPuntos();
+        const audioTransicion = await hablar(frases.transicion, "mano");
+        quitarPuntos();
+        agregarBurbuja(frases.transicion, "ezequiel");
+        await reproducir(audioTransicion);
+
+        // 5. Muestra el mapa
+        setPose("idle");
+        mostrarMapaUbicacion();
+
+        // 6. Confirmar ubicación
+        btnConfirmar.onclick = async () => {
+          if (!coordElegida || !historiaId) return;
+          await fetch("/ubicar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: historiaId, lat: coordElegida.lat, lng: coordElegida.lng })
+          });
+          seccionMapa.style.display = "none";
+          agregarBurbuja("(Historia ubicada en el mapa ✓)", "sistema");
+          await ejecutarDespedida(frasesActuales);
+        };
+
+      } catch(e) {
+        console.error("Error completo:", e);
+        estadoTexto.textContent = "❌ No se pudo conectar.";
+        btnGrabar.style.display = "inline-block";
+      }
+    }
+
+    // ── Mapa de ubicación ────────────────────────────────────────────────────
     function mostrarMapaUbicacion() {
       seccionMapa.style.display  = "flex";
       btnConfirmar.style.display = "none";
       coordElegida               = null;
+
       if (!mapa) {
         mapa = L.map("mapa").setView([6.5567, -75.8241], 15);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -689,20 +717,15 @@ async function arrancar() {
         setTimeout(() => mapa.invalidateSize(), 100);
       }
     }
- 
-    btnConfirmar.addEventListener("click", async () => {
-      if (!coordElegida || !historiaId) return;
-      await fetch("/ubicar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: historiaId, lat: coordElegida.lat, lng: coordElegida.lng })
-      });
+
+    // ── Sin ubicación ────────────────────────────────────────────────────────
+    btnSinUbicacion.addEventListener("click", async () => {
       seccionMapa.style.display = "none";
-      agregarBurbuja("(Historia ubicada en el mapa ✓)", "sistema");
+      agregarBurbuja("(Historia sin ubicación definida)", "sistema");
+      if (frasesActuales) await ejecutarDespedida(frasesActuales);
     });
- 
+
     arrancar();
   </script>
 </body>
 </html>
- 

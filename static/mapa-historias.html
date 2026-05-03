@@ -17,9 +17,9 @@
       --gris:       #9a856e;
       --blanco:     #fdf8f2;
     }
- 
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
- 
+
     body {
       font-family: 'Lora', Georgia, serif;
       background: var(--crema);
@@ -29,8 +29,7 @@
       flex-direction: column;
       overflow: hidden;
     }
- 
-    /* ── Header ── */
+
     #header {
       background: var(--cafe);
       padding: 14px 28px;
@@ -42,7 +41,7 @@
       z-index: 10;
       position: relative;
     }
- 
+
     #header-titulo {
       font-family: 'Playfair Display', serif;
       font-size: 1.05rem;
@@ -52,7 +51,7 @@
       flex: 1;
       line-height: 1.3;
     }
- 
+
     #header-titulo span {
       display: block;
       font-size: 0.75rem;
@@ -61,13 +60,7 @@
       opacity: 0.75;
       font-family: 'Lora', serif;
     }
- 
-    #contador {
-      font-size: 0.78rem;
-      color: rgba(240,230,211,0.7);
-      font-style: italic;
-    }
- 
+
     .header-btn {
       width: 40px; height: 40px;
       border-radius: 50%;
@@ -82,20 +75,17 @@
       transition: background 0.2s;
       text-decoration: none;
     }
- 
+
     .header-btn:hover { background: rgba(240,230,211,0.25); }
- 
-    /* ── Contenedor principal ── */
+
     #contenedor {
       display: flex;
       flex: 1;
       overflow: hidden;
     }
- 
-    /* ── Mapa ── */
+
     #mapa { flex: 1; }
- 
-    /* ── Panel lateral ── */
+
     #panel {
       width: 320px;
       background: var(--blanco);
@@ -108,72 +98,96 @@
       scrollbar-width: thin;
       scrollbar-color: var(--crema-dark) transparent;
     }
- 
+
     #panel::-webkit-scrollbar { width: 3px; }
     #panel::-webkit-scrollbar-thumb { background: var(--crema-dark); }
- 
-    #panel-vacio {
-      color: var(--gris);
-      font-style: italic;
-      font-size: 0.9rem;
-      text-align: center;
-      padding: 24px 0;
-    }
- 
-    /* ── Tarjetas ── */
+
     .historia-card {
       background: var(--crema);
       border: 1px solid var(--crema-dark);
       border-radius: 16px;
       padding: 14px 16px;
-      cursor: pointer;
       transition: all 0.2s ease;
       border-left: 4px solid var(--cafe);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
- 
+
     .historia-card:hover {
       background: var(--crema-dark);
-      transform: translateX(2px);
       box-shadow: 0 4px 16px rgba(59,31,14,0.08);
     }
- 
+
     .historia-card.activa {
       background: var(--crema-dark);
       border-left-color: var(--dorado);
       box-shadow: 0 4px 20px rgba(59,31,14,0.12);
     }
- 
+
     .historia-card.sin-ubicacion {
-      opacity: 0.5;
+      opacity: 0.55;
       border-left-color: var(--crema-dark);
+      cursor: default;
     }
- 
+
     .card-numero {
       font-size: 0.72rem;
       color: var(--gris);
-      margin-bottom: 6px;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
- 
-    .card-numero.sin-ub::after {
-      content: " · sin ubicar";
-    }
- 
+
+    .card-numero.sin-ub::after { content: " · sin ubicar"; }
+
     .card-texto {
       font-size: 0.9rem;
       line-height: 1.55;
       color: var(--texto);
+      cursor: pointer;
     }
- 
+
+    .btn-expandir {
+      background: none;
+      border: none;
+      color: var(--dorado);
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 2px 0;
+      font-family: 'Lora', serif;
+      text-align: left;
+      transition: color 0.2s;
+    }
+
+    .btn-expandir:hover { color: var(--cafe); }
+
     .card-fecha {
       font-size: 0.75rem;
       color: var(--gris);
-      margin-top: 8px;
       font-style: italic;
     }
- 
-    /* ── Popup de Leaflet estilizado ── */
+
+    /* Botón "Que Don Ezequiel la cuente" */
+    .btn-contar {
+      background: var(--cafe);
+      color: var(--crema);
+      border: none;
+      border-radius: 50px;
+      padding: 9px 16px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-family: 'Lora', serif;
+      transition: all 0.2s;
+      margin-top: 4px;
+      align-self: flex-start;
+    }
+
+    .btn-contar:hover {
+      background: var(--tierra);
+      transform: translateY(-1px);
+    }
+
+    /* Popups Leaflet */
     .leaflet-popup-content-wrapper {
       background: var(--cafe) !important;
       color: var(--crema) !important;
@@ -181,16 +195,17 @@
       box-shadow: 0 8px 32px rgba(59,31,14,0.25) !important;
       font-family: 'Lora', serif !important;
       border: none !important;
+      max-width: 260px !important;
     }
- 
+
     .leaflet-popup-tip { background: var(--cafe) !important; }
- 
+
     .leaflet-popup-content {
       margin: 12px 16px !important;
       font-size: 0.88rem !important;
       line-height: 1.5 !important;
     }
- 
+
     .popup-numero {
       font-size: 0.72rem;
       opacity: 0.7;
@@ -198,11 +213,9 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
- 
-    .popup-texto {
-      color: var(--crema);
-    }
- 
+
+    .popup-texto { color: var(--crema); }
+
     .leaflet-popup-close-button {
       color: var(--crema) !important;
       font-size: 18px !important;
@@ -210,7 +223,7 @@
   </style>
 </head>
 <body>
- 
+
   <div id="header">
     <a href="/static/index.html" class="header-btn" title="Volver">←</a>
     <div id="header-titulo">
@@ -219,17 +232,18 @@
     </div>
     <div style="width:40px"></div>
   </div>
- 
+
   <div id="contenedor">
     <div id="mapa"></div>
     <div id="panel">
-      <p id="panel-vacio">Cargando historias...</p>
+      <p style="color:var(--gris);font-style:italic;font-size:0.9rem;text-align:center;padding:24px 0">
+        Cargando historias...
+      </p>
     </div>
   </div>
- 
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // Marcador SVG personalizado
     const iconoMarcador = L.divIcon({
       className: "",
       html: `<svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
@@ -238,7 +252,7 @@
       </svg>`,
       iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -42]
     });
- 
+
     const iconoActivo = L.divIcon({
       className: "",
       html: `<svg width="36" height="46" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
@@ -247,88 +261,123 @@
       </svg>`,
       iconSize: [36, 46], iconAnchor: [18, 46], popupAnchor: [0, -48]
     });
- 
-    const mapa    = L.map("mapa").setView([6.5567, -75.8241], 15);
-    const panel   = document.getElementById("panel");
+
+    const mapa     = L.map("mapa").setView([6.5567, -75.8241], 15);
+    const panel    = document.getElementById("panel");
     const contador = document.getElementById("contador");
- 
+
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap"
     }).addTo(mapa);
- 
-    let cardActiva   = null;
+
+    let cardActiva     = null;
     let marcadorActivo = null;
- 
+
     async function cargarHistorias() {
       const r    = await fetch(window.location.origin + "/historias");
       const data = await r.json();
       const hs   = data.historias;
- 
+
       const conUb = hs.filter(h => h.lat).length;
       contador.textContent = `${hs.length} historia${hs.length !== 1 ? "s" : ""} · ${conUb} ubicada${conUb !== 1 ? "s" : ""}`;
- 
+
       panel.innerHTML = "";
- 
+
       if (hs.length === 0) {
-        panel.innerHTML = '<p id="panel-vacio">No hay historias guardadas aún.</p>';
+        panel.innerHTML = '<p style="color:var(--gris);font-style:italic;font-size:0.9rem;text-align:center;padding:24px 0">No hay historias guardadas aún.</p>';
         return;
       }
- 
+
       hs.forEach(h => {
-        // Tarjeta
-        const card = document.createElement("div");
         const tieneUb = !!h.lat;
+        const card    = document.createElement("div");
         card.className = "historia-card" + (tieneUb ? "" : " sin-ubicacion");
- 
-        const resumen = h.texto.length > 150 ? h.texto.slice(0, 150) + "..." : h.texto;
- 
-        card.innerHTML = `
-          <div class="card-numero ${tieneUb ? "" : "sin-ub"}">Historia #${h.id}</div>
-          <div class="card-texto">${resumen}</div>
-          <div class="card-fecha">${h.fecha} · ${h.hora}</div>
-        `;
- 
+
+        const LIMITE   = 150;
+        const esLarga  = h.texto.length > LIMITE;
+        const resumen  = esLarga ? h.texto.slice(0, LIMITE) + "..." : h.texto;
+        let expandido  = false;
+
+        // Número
+        const numEl = document.createElement("div");
+        numEl.className = `card-numero${tieneUb ? "" : " sin-ub"}`;
+        numEl.textContent = `Historia #${h.id}`;
+        card.appendChild(numEl);
+
+        // Texto
+        const textoEl = document.createElement("div");
+        textoEl.className = "card-texto";
+        textoEl.textContent = resumen;
+        card.appendChild(textoEl);
+
+        // Botón expandir (solo si es larga)
+        if (esLarga) {
+          const btnExp = document.createElement("button");
+          btnExp.className = "btn-expandir";
+          btnExp.textContent = "Leer más ↓";
+          btnExp.addEventListener("click", (e) => {
+            e.stopPropagation();
+            expandido = !expandido;
+            textoEl.textContent = expandido ? h.texto : resumen;
+            btnExp.textContent  = expandido ? "Leer menos ↑" : "Leer más ↓";
+          });
+          card.appendChild(btnExp);
+        }
+
+        // Fecha
+        const fechaEl = document.createElement("div");
+        fechaEl.className = "card-fecha";
+        fechaEl.textContent = `${h.fecha} · ${h.hora}`;
+        card.appendChild(fechaEl);
+
+        // Botón "Que Don Ezequiel la cuente" (solo historias con guión)
         if (tieneUb) {
-          // Marcador en el mapa
+          const btnContar = document.createElement("button");
+          btnContar.className = "btn-contar";
+          btnContar.textContent = "🎙 Que Don Ezequiel la cuente";
+          btnContar.addEventListener("click", (e) => {
+            e.stopPropagation();
+            window.location.href = `/static/index.html?historia=${h.id}`;
+          });
+          card.appendChild(btnContar);
+        }
+
+        // Marcador en el mapa
+        if (tieneUb) {
           const m = L.marker([h.lat, h.lng], { icon: iconoMarcador }).addTo(mapa);
- 
-          const popupHTML = `
+
+          const popupResumen = h.texto.length > 120 ? h.texto.slice(0, 120) + "..." : h.texto;
+          m.bindPopup(`
             <div class="popup-numero">Historia #${h.id}</div>
-            <div class="popup-texto">${resumen}</div>
-          `;
-          m.bindPopup(popupHTML);
- 
-          // Clic en marcador → activa card
+            <div class="popup-texto">${popupResumen}</div>
+          `);
+
           m.on("click", () => {
             activarCard(card, m);
             card.scrollIntoView({ behavior: "smooth", block: "center" });
           });
- 
-          // Clic en card → vuela al marcador
+
           card.addEventListener("click", () => {
             activarCard(card, m);
             mapa.flyTo([h.lat, h.lng], 17, { duration: 0.8 });
             m.openPopup();
           });
         }
- 
+
         panel.appendChild(card);
       });
     }
- 
+
     function activarCard(card, marcador) {
-      // Resetea card anterior
       if (cardActiva) cardActiva.classList.remove("activa");
       card.classList.add("activa");
       cardActiva = card;
- 
-      // Resetea marcador anterior
+
       if (marcadorActivo) marcadorActivo.setIcon(iconoMarcador);
       if (marcador) { marcador.setIcon(iconoActivo); marcadorActivo = marcador; }
     }
- 
+
     cargarHistorias();
   </script>
 </body>
 </html>
- 

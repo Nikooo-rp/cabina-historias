@@ -1,11 +1,13 @@
 # main.py
 import json
-import re  # ← NUEVO (movido arriba para claridad)
+import re
+import hashlib
 from dotenv import load_dotenv
 
 from fastapi import FastAPI, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, Response
 import requests, tempfile, os
 from datetime import datetime
 from openai import OpenAI
@@ -22,13 +24,15 @@ app.add_middleware(
 )
 
 # APIs
-LEMONFOX_API_KEY  = os.getenv("API_KEY")
-ELEVENLABS_API_KEY = os.getenv("11LAB_KEY")
-ELEVENLABS_VOICE_ID = "KbQNOXh5ZzvuCtEzbdge"
+LEMONFOX_API_KEY    = os.getenv("API_KEY")
+ELEVENLABS_API_KEY  = os.getenv("11LAB_KEY")
+ELEVENLABS_VOICE_ID = "nGwnc9b9Cu64tHKjIvRt"
 
-# Archivos
+# Archivos y carpetas
 ARCHIVO_HISTORIAS = "historias.jsonl"
 ARCHIVO_GUIONES   = "guiones.jsonl"
+CARPETA_AUDIOS    = "audios"
+os.makedirs(CARPETA_AUDIOS, exist_ok=True)
 
 client = OpenAI(
     api_key=LEMONFOX_API_KEY,
@@ -41,7 +45,7 @@ with open("instrucciones.txt", "r", encoding="utf-8") as f:
 if not LEMONFOX_API_KEY:
     raise ValueError("No se ha establecido la variable de entorno API_KEY para Lemonfox")
 
-# ─── Prompts ─────────────────────────────────────────────────────────────────
+# ─── Prompts ──────────────────────────────────────────────────────────────────
 
 TR_PROMPT = """
 Audio grabado en Santa Fe de Antioquia, Colombia. Narración oral espontánea
@@ -153,13 +157,17 @@ FORMATO — responde ÚNICAMENTE con este JSON válido, sin explicaciones ni bac
   ]
 }"""
 
+SYSTEM_PROMPT_GRACIAS = """Eres Don Ezequiel, un narrador mayor de Santa Fe de Antioquia.
+Alguien acaba de contarte una historia. Responde con UN solo párrafo muy breve (máximo 2 frases)
+agradeciéndole de forma cálida y diciéndole que vas a guardar esa historia para contársela a otros.
+Usa vocabulario antioqueño natural. Solo el texto, sin JSON, sin explicaciones."""
+
 # ─── Correcciones de transcripción ───────────────────────────────────────────
 
 CORRECCIONES = {
     "la playa principal de ustubica": "la plaza principal, ¿usté ubica?",
     "ustubica": "¿usté ubica?",
     "playa principal": "plaza principal",
-    # Agrega aquí los errores que vayas encontrando
 }
 
 def corregir_transcripcion(texto: str) -> str:
@@ -184,7 +192,14 @@ def agregar_linea(path: str, registro: dict):
     with open(path, "a", encoding="utf-8") as f:
         f.write(json.dumps(registro, ensure_ascii=False) + "\n")
 
-# ─── Lógica de guión          ─────────────────────────────────────────────────
+# ─── Caché de audios ─────────────────────────────────────────────────────────
+
+def ruta_audio(texto: str) -> str:
+    """Genera una ruta única basada en el contenido del texto."""
+    hash_texto = hashlib.md5(texto.encode()).hexdigest()
+    return os.path.join(CARPETA_AUDIOS, f"{hash_texto}.mp3")
+
+# ─── Lógica de LLM ───────────────────────────────────────────────────────────
 
 def llamar_llm(texto: str) -> str:
     respuesta = requests.post(
@@ -207,6 +222,25 @@ def llamar_llm(texto: str) -> str:
     )
     return respuesta.json()["choices"][0]["message"]["content"]
 
+def llamar_llm_simple(texto: str) -> str:
+    r = requests.post(
+        "https://api.lemonfox.ai/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {LEMONFOX_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "model": "llama-3.3-70b-chat",
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT_GRACIAS},
+                {"role": "user", "content": f"La historia que me contaron fue:\n\n{texto}"}
+            ],
+            "temperature": 0.6,
+            "max_tokens": 120
+        }
+    )
+    return r.json()["choices"][0]["message"]["content"].strip()
+
 def parsear_guion(contenido: str) -> dict:
     contenido = contenido.strip()
     if contenido.startswith("```"):
@@ -216,7 +250,6 @@ def parsear_guion(contenido: str) -> dict:
     return json.loads(contenido.strip())
 
 def generar_y_guardar_guion(historia: dict) -> dict:
-    """Genera el guión de una historia y lo guarda en guiones.jsonl."""
     texto_corregido = corregir_transcripcion(historia["texto"])
     contenido = llamar_llm(texto_corregido)
     guion = parsear_guion(contenido)
@@ -230,7 +263,7 @@ def generar_y_guardar_guion(historia: dict) -> dict:
 
     return guion
 
-# ─── Endpoints ───────────────────────────────────────────────────────────────
+# ─── Endpoints ────────────────────────────────────────────────────────────────
 
 @app.get("/")
 def raiz():
@@ -258,17 +291,14 @@ async def transcribir(audio: UploadFile = File(...)):
         respuesta.raise_for_status()
         texto = respuesta.json()["text"]
 
-        # Guarda la historia
-        numero = len(leer_archivo(ARCHIVO_HISTORIAS)) + 1  # ← usa helper
+        numero = len(leer_archivo(ARCHIVO_HISTORIAS)) + 1
         historia = {
             "id":    numero,
             "fecha": datetime.now().strftime("%Y-%m-%d"),
             "hora":  datetime.now().strftime("%H:%M:%S"),
             "texto": texto
         }
-        agregar_linea(ARCHIVO_HISTORIAS, historia)  # ← usa helper
-
-        # Genera y guarda el guión automáticamente ← NUEVO
+        agregar_linea(ARCHIVO_HISTORIAS, historia)
         guion = generar_y_guardar_guion(historia)
 
         return {"texto": texto, "numero": numero, "guion": guion}
@@ -309,7 +339,6 @@ def ver_guiones():
 
 @app.get("/guion/{id}")
 def ver_guion(id: int):
-    """Devuelve el guión guardado de una historia sin llamar al LLM."""
     guiones = leer_archivo(ARCHIVO_GUIONES)
     for g in guiones:
         if g["id"] == id:
@@ -318,7 +347,6 @@ def ver_guion(id: int):
 
 @app.post("/guion")
 async def generar_guion(request: Request):
-    """Regenera el guión de una historia guardada, o genera uno de texto libre."""
     datos = await request.json()
     historia_id = datos.get("id")
 
@@ -328,7 +356,6 @@ async def generar_guion(request: Request):
         if not historia:
             return {"error": f"No se encontró la historia {historia_id}"}
     else:
-        # Texto libre para pruebas (desde probar-guion.html)
         texto = datos.get("texto", "")
         historia = {"id": 0, "texto": texto}
 
@@ -340,7 +367,6 @@ async def generar_guion(request: Request):
 
 @app.post("/corregir")
 async def corregir(request: Request):
-    """Edita el texto de una historia y regenera su guión."""
     datos       = await request.json()
     id          = datos.get("id")
     texto_nuevo = datos.get("texto")
@@ -361,19 +387,24 @@ async def corregir(request: Request):
         return {"error": f"No se encontró la historia {id}"}
 
     escribir_archivo(ARCHIVO_HISTORIAS, historias)
-
     historia = next(h for h in historias if h["id"] == id)
     try:
         guion = generar_y_guardar_guion(historia)
         return {"ok": True, "guion": guion}
     except Exception as e:
         return {"error": str(e)}
-    
+
 @app.post("/tts")
 async def tts(request: Request):
     datos = await request.json()
     texto = datos.get("texto", "")
+    ruta  = ruta_audio(texto)
 
+    # Si ya existe el audio, lo devuelve directamente sin llamar a ElevenLabs
+    if os.path.exists(ruta):
+        return FileResponse(ruta, media_type="audio/mpeg")
+
+    # Si no existe, lo genera y guarda
     respuesta = requests.post(
         f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}",
         headers={
@@ -391,13 +422,12 @@ async def tts(request: Request):
             }
         }
     )
-
     respuesta.raise_for_status()
-    from fastapi.responses import Response
-    return Response(
-        content=respuesta.content,
-        media_type="audio/mpeg"
-    )
+
+    with open(ruta, "wb") as f:
+        f.write(respuesta.content)
+
+    return Response(content=respuesta.content, media_type="audio/mpeg")
 
 @app.get("/historia-aleatoria")
 def historia_aleatoria():
@@ -407,36 +437,12 @@ def historia_aleatoria():
     import random
     return random.choice(guiones)
 
-SYSTEM_PROMPT_GRACIAS = """Eres Don Ezequiel, un narrador mayor de Santa Fe de Antioquia.
-Alguien acaba de contarte una historia. Responde con UN solo párrafo muy breve (máximo 2 frases)
-agradeciéndole de forma cálida y diciéndole que vas a guardar esa historia para contársela a otros.
-Usa vocabulario antioqueño natural. Solo el texto, sin JSON, sin explicaciones."""
-
 @app.post("/gracias")
 async def generar_gracias(request: Request):
     datos = await request.json()
     texto = datos.get("texto", "")
     contenido = llamar_llm_simple(texto)
     return {"texto": contenido}
-
-def llamar_llm_simple(texto: str) -> str:
-    r = requests.post(
-        "https://api.lemonfox.ai/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {LEMONFOX_API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "model": "llama-3.3-70b-chat",
-            "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT_GRACIAS},
-                {"role": "user", "content": f"La historia que me contaron fue:\n\n{texto}"}
-            ],
-            "temperature": 0.6,
-            "max_tokens": 120
-        }
-    )
-    return r.json()["choices"][0]["message"]["content"].strip()
 
 @app.get("/frases-transicion")
 def frases_transicion():
