@@ -217,11 +217,11 @@ def generar_y_guardar_guion(historia: dict) -> dict:
     guion = parsear_guion(contenido)
     guion["id"] = historia["id"]
 
-    # Reemplaza el guión si ya existía, o agrega uno nuevo
-    guiones = leer_archivo(ARCHIVO_GUIONES)
-    guiones = [g for g in guiones if g["id"] != historia["id"]]
-    guiones.append(guion)
-    escribir_archivo(ARCHIVO_GUIONES, guiones)
+    if historia["id"] != 0:
+        guiones = leer_archivo(ARCHIVO_GUIONES)
+        guiones = [g for g in guiones if g["id"] != historia["id"]]
+        guiones.append(guion)
+        escribir_archivo(ARCHIVO_GUIONES, guiones)
 
     return guion
 
