@@ -510,21 +510,25 @@
     }
 
     async function reproducir(audio) {
-    if (audioActual) { audioActual.pause(); audioActual = null; }
-    audioActual = audio;
-    pausado = false;
-    btnPausa.style.display = "inline-block";
-    btnPausa.textContent   = "⏸ Pausar";
-    audio.play();
-    await new Promise(r => {
-      audio.onended = () => {
-        URL.revokeObjectURL(audio._url);
-        btnPausa.style.display = "none";
-        pausado = false;
-        r();
-      };
-    });
-    }
+  if (audioActual) { audioActual.pause(); audioActual = null; }
+  audioActual = audio;
+  pausado = false;
+  btnPausa.style.display = "inline-block";
+  btnPausa.textContent   = "⏸ Pausar";
+
+  ducking(true);   // ← baja el ambiente
+  audio.play();
+
+  await new Promise(r => {
+    audio.onended = () => {
+      URL.revokeObjectURL(audio._url);
+      btnPausa.style.display = "none";
+      pausado = false;
+      ducking(false);  // ← sube el ambiente
+      r();
+    };
+  });
+}
 
     // ── Narrar guión ─────────────────────────────────────────────────────────
     async function narrarGuion(guion) {
@@ -563,12 +567,53 @@
       btnGrabar.style.display = "inline-block";
     }
 
+    // ── Audio ambiente ────────────────────────────────────────────────────────
+    const audioAmbiente = new Audio("/static/audio/ambiente.mp3");
+    const audioMusica   = new Audio("/static/audio/musica.mp3");
+
+    audioAmbiente.loop   = true;
+    audioMusica.loop     = true;
+    audioAmbiente.volume = 0.35;  // ajusta según el archivo
+    audioMusica.volume   = 0.15;  // muy suave, solo se siente
+
+    function iniciarAmbiente() {
+      audioAmbiente.play().catch(() => {}); // catch por políticas de autoplay
+      audioMusica.play().catch(() => {});
+    }
+
+    function ducking(activar) {
+      // Baja el ambiente cuando Don Ezequiel habla, lo sube cuando termina
+      const volAmbiente = activar ? 0.1 : 0.35;
+      const volMusica   = activar ? 0.05 : 0.15;
+
+      // Transición suave de volumen
+      const pasos = 20;
+      const intervalo = 50; // ms
+      let paso = 0;
+
+      const volActualAmbiente = audioAmbiente.volume;
+      const volActualMusica   = audioMusica.volume;
+      const diffAmbiente = volAmbiente - volActualAmbiente;
+      const diffMusica   = volMusica   - volActualMusica;
+
+      const fade = setInterval(() => {
+        paso++;
+        audioAmbiente.volume = Math.max(0, Math.min(1,
+          volActualAmbiente + (diffAmbiente * paso / pasos)
+        ));
+        audioMusica.volume = Math.max(0, Math.min(1,
+          volActualMusica + (diffMusica * paso / pasos)
+        ));
+        if (paso >= pasos) clearInterval(fade);
+      }, intervalo);
+    }
     // ── Arranque ─────────────────────────────────────────────────────────────
     async function arrancar() {
       // Detecta si viene con un ID específico desde el mapa
       const params     = new URLSearchParams(window.location.search);
       const idElegido  = params.get("historia");
 
+      iniciarAmbiente();
       estadoTexto.textContent = "Don Ezequiel está recordando una historia...";
       mostrarPuntos();
 
