@@ -87,14 +87,13 @@
     }
 
     #lado-personaje {
+      width: 36%;
       position: relative;
       display: flex;
       align-items: flex-end;
       justify-content: center;
       overflow: hidden;
-      /* Ancho automático basado en la imagen, no porcentaje fijo */
-      width: auto;
-      flex-shrink: 0;
+      background: linear-gradient(to bottom, var(--crema) 0%, var(--crema-dark) 100%);
     }
 
     #lado-personaje::after {
@@ -116,19 +115,18 @@
     }
 
     .pose {
-      position: relative; /* ya no absolute */
-      bottom: auto;
-      left: auto;
-      transform: none;
-      height: 100%;       /* ocupa toda la altura del panel */
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 90vh;
       width: auto;
       object-fit: contain;
       opacity: 0;
       filter: drop-shadow(0 12px 32px rgba(59,31,14,0.15));
-      display: none;      /* oculto por defecto */
     }
 
-    .pose.activa { opacity: 1; display: block;}
+    .pose.activa { opacity: 1; }
 
     #lado-panel {
       flex: 1;
@@ -255,7 +253,6 @@
       box-shadow: 0 2px 12px rgba(59,31,14,0.08);
     }
 
-    /* Botones del mapa */
     #botones-mapa {
       display: flex;
       gap: 10px;
@@ -321,11 +318,11 @@
     #btn-detener:hover:not(:disabled) { background: #d9c9ae; }
 
     #btn-pausa {
-    background: transparent;
-    color: var(--cafe);
-    border: 1px solid rgba(92,45,14,0.3);
-    font-size: 0.85rem;
-    padding: 10px 18px;
+      background: transparent;
+      color: var(--cafe);
+      border: 1px solid rgba(92,45,14,0.3);
+      font-size: 0.85rem;
+      padding: 10px 18px;
     }
 
     #btn-pausa:hover { background: var(--crema-dark); }
@@ -363,10 +360,10 @@
     }
 
     #btn-no-tengo {
-    background: transparent;
-    color: var(--gris);
-    border: 1px solid rgba(154,133,110,0.4);
-    font-size: 0.85rem;
+      background: transparent;
+      color: var(--gris);
+      border: 1px solid rgba(154,133,110,0.4);
+      font-size: 0.85rem;
     }
 
     #btn-no-tengo:hover { border-color: var(--cafe-mid); color: var(--cafe-mid); }
@@ -381,15 +378,197 @@
     }
 
     #btn-mapa:hover { border-color: var(--cafe); color: var(--cafe); }
+
+    /* ── Overlay mapa general ── */
+    #overlay-mapa {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      flex-direction: column;
+      background: var(--crema);
+    }
+
+    #overlay-mapa.visible { display: flex; }
+
+    #overlay-header {
+      background: var(--cafe);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 0 0 20px 20px;
+      box-shadow: 0 4px 20px rgba(59,31,14,0.2);
+      z-index: 10;
+    }
+
+    #overlay-header-titulo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--crema);
+      text-align: center;
+      flex: 1;
+      line-height: 1.3;
+    }
+
+    #overlay-header-titulo span {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 400;
+      font-style: italic;
+      opacity: 0.75;
+      font-family: 'Lora', serif;
+    }
+
+    #overlay-contenedor {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #mapa-overlay { flex: 1; }
+
+    #panel-overlay {
+      width: 320px;
+      background: var(--blanco);
+      border-left: 1px solid var(--crema-dark);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--crema-dark) transparent;
+    }
+
+    #panel-overlay::-webkit-scrollbar { width: 3px; }
+    #panel-overlay::-webkit-scrollbar-thumb { background: var(--crema-dark); }
+
+    /* Tarjetas compartidas entre overlay y sección mapa */
+    .historia-card {
+      background: var(--crema);
+      border: 1px solid var(--crema-dark);
+      border-radius: 16px;
+      padding: 14px 16px;
+      transition: all 0.2s ease;
+      border-left: 4px solid var(--cafe);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .historia-card:hover {
+      background: var(--crema-dark);
+      box-shadow: 0 4px 16px rgba(59,31,14,0.08);
+    }
+
+    .historia-card.activa {
+      background: var(--crema-dark);
+      border-left-color: var(--dorado);
+      box-shadow: 0 4px 20px rgba(59,31,14,0.12);
+    }
+
+    .historia-card.sin-ubicacion {
+      opacity: 0.55;
+      border-left-color: var(--crema-dark);
+    }
+
+    .card-numero {
+      font-size: 0.72rem;
+      color: var(--gris);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .card-numero.sin-ub::after { content: " · sin ubicar"; }
+
+    .card-texto {
+      font-size: 0.9rem;
+      line-height: 1.55;
+      color: var(--texto);
+    }
+
+    .btn-expandir {
+      background: none;
+      border: none;
+      color: var(--dorado);
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 2px 0;
+      font-family: 'Lora', serif;
+      text-align: left;
+    }
+
+    .btn-expandir:hover { color: var(--cafe); }
+
+    .card-fecha {
+      font-size: 0.75rem;
+      color: var(--gris);
+      font-style: italic;
+    }
+
+    .btn-contar {
+      background: var(--cafe);
+      color: var(--crema);
+      border: none;
+      border-radius: 50px;
+      padding: 9px 16px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-family: 'Lora', serif;
+      transition: all 0.2s;
+      margin-top: 4px;
+      align-self: flex-start;
+    }
+
+    .btn-contar:hover { background: var(--tierra); }
+
+    /* Popups Leaflet */
+    .leaflet-popup-content-wrapper {
+      background: var(--cafe) !important;
+      color: var(--crema) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 8px 32px rgba(59,31,14,0.25) !important;
+      font-family: 'Lora', serif !important;
+      border: none !important;
+      max-width: 260px !important;
+    }
+
+    .leaflet-popup-tip { background: var(--cafe) !important; }
+
+    .leaflet-popup-content {
+      margin: 12px 16px !important;
+      font-size: 0.88rem !important;
+      line-height: 1.5 !important;
+    }
+
+    .popup-numero {
+      font-size: 0.72rem;
+      opacity: 0.7;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .popup-texto { color: var(--crema); }
+
+    .leaflet-popup-close-button {
+      color: var(--crema) !important;
+      font-size: 18px !important;
+    }
   </style>
 </head>
 <body>
 
   <div id="header">
+    <button class="header-btn">☰</button>
     <div id="header-titulo">
-      Relaticos
-      <span>de Santa Fe de Antioquia</span>
+      Santa Fe de Antioquia
+      <span>Historias de ayer y hoy</span>
     </div>
+    <button class="header-btn">◎</button>
   </div>
 
   <div id="app">
@@ -403,11 +582,9 @@
     </div>
 
     <div id="lado-panel">
-
       <div id="dialogo"></div>
       <div id="transcripcion-wrap"></div>
 
-      <!-- Mapa ubicación -->
       <div id="seccion-mapa">
         <p>¿Dónde ocurrió esta historia? Toca el mapa para marcar el lugar.</p>
         <div id="mapa"></div>
@@ -424,27 +601,43 @@
           <button class="btn" id="btn-no-tengo" style="display:none;">No tengo una historia</button>
           <button class="btn" id="btn-detener">⏹ Terminar</button>
           <button class="btn" id="btn-pausa" style="display:none;">⏸ Pausar</button>
-          <button class="btn" id="btn-mapa"
-            onclick="window.open('/static/mapa-historias.html','_blank')">
-            🗺 Ver historias
-          </button>
+          <button class="btn" id="btn-mapa">🗺 Ver historias</button>
         </div>
       </div>
+    </div>
+  </div>
 
+  <!-- ── Overlay mapa general ── -->
+  <div id="overlay-mapa">
+    <div id="overlay-header">
+      <button class="header-btn" id="btn-cerrar-mapa">←</button>
+      <div id="overlay-header-titulo">
+        Historias del pueblo
+        <span id="overlay-contador">Cargando...</span>
+      </div>
+      <div style="width:40px"></div>
+    </div>
+    <div id="overlay-contenedor">
+      <div id="mapa-overlay"></div>
+      <div id="panel-overlay"></div>
     </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const btnNoTengo = document.getElementById("btn-no-tengo");
+    const btnNoTengo        = document.getElementById("btn-no-tengo");
     const dialogo           = document.getElementById("dialogo");
     const estadoTexto       = document.getElementById("estado-texto");
     const btnGrabar         = document.getElementById("btn-grabar");
     const btnDetener        = document.getElementById("btn-detener");
+    const btnPausa          = document.getElementById("btn-pausa");
     const btnConfirmar      = document.getElementById("btn-confirmar-ubicacion");
     const btnSinUbicacion   = document.getElementById("btn-sin-ubicacion");
     const seccionMapa       = document.getElementById("seccion-mapa");
     const transcripcionWrap = document.getElementById("transcripcion-wrap");
+    const overlayMapa       = document.getElementById("overlay-mapa");
+    const panelOverlay      = document.getElementById("panel-overlay");
+    const overlayContador   = document.getElementById("overlay-contador");
 
     const poses = {
       idle:     document.getElementById("pose-idle"),
@@ -454,11 +647,18 @@
       tomando:  document.getElementById("pose-tomando"),
     };
 
-    let poseActual = "idle", mediaRecorder = null, chunks = [];
-    let historiaId = null, mapa = null, marcador = null;
-    let coordElegida = null, audioActual = null;
-    let frasesActuales = null; // guardadas para btn-sin-ubicacion
+    let poseActual     = "idle";
+    let mediaRecorder  = null;
+    let chunks         = [];
+    let historiaId     = null;
+    let mapa           = null;
+    let marcador       = null;
+    let coordElegida   = null;
+    let audioActual    = null;
+    let pausado        = false;
+    let frasesActuales = null;
 
+    // Iconos marcadores
     const iconoMarcador = L.divIcon({
       className: "",
       html: `<svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
@@ -466,6 +666,24 @@
         <circle cx="16" cy="16" r="7" fill="#f0e6d3"/>
       </svg>`,
       iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -40]
+    });
+
+    const iconoMarcadorOverlay = L.divIcon({
+      className: "",
+      html: `<svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 10 16 24 16 24S32 26 32 16C32 7.163 24.837 0 16 0z" fill="#5c2d0e"/>
+        <circle cx="16" cy="16" r="7" fill="#f0e6d3"/>
+      </svg>`,
+      iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -42]
+    });
+
+    const iconoActivoOverlay = L.divIcon({
+      className: "",
+      html: `<svg width="36" height="46" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 10 16 24 16 24S32 26 32 16C32 7.163 24.837 0 16 0z" fill="#c9943a"/>
+        <circle cx="16" cy="16" r="7" fill="#fdf8f2"/>
+      </svg>`,
+      iconSize: [36, 46], iconAnchor: [18, 46], popupAnchor: [0, -48]
     });
 
     // ── Poses ────────────────────────────────────────────────────────────────
@@ -521,31 +739,29 @@
       }
     }
 
-  async function reproducir(audio) {
-  if (audioActual) { audioActual.pause(); audioActual = null; }
-  audioActual = audio;
-  pausado = false;
-  btnPausa.style.display = "inline-block";
-  btnPausa.textContent   = "⏸ Pausar";
-
-  ducking(true);   // ← baja el ambiente
-  audio.play();
-
-  await new Promise(r => {
-    audio.onended = () => {
-      URL.revokeObjectURL(audio._url);
-      btnPausa.style.display = "none";
+    async function reproducir(audio) {
+      if (audioActual) { audioActual.pause(); audioActual = null; }
+      audioActual = audio;
       pausado = false;
-      ducking(false);  // ← sube el ambiente
-      r();
-    };
-  });
-}
+      btnPausa.style.display = "inline-block";
+      btnPausa.textContent   = "⏸ Pausar";
+      ducking(true);
+      audio.play();
+      await new Promise(r => {
+        audio.onended = () => {
+          URL.revokeObjectURL(audio._url);
+          btnPausa.style.display = "none";
+          pausado = false;
+          ducking(false);
+          r();
+        };
+      });
+    }
 
     // ── Narrar guión ─────────────────────────────────────────────────────────
     async function narrarGuion(guion) {
       for (const parrafo of guion.parrafos) {
-        const pose = parrafo.pose === "saludo" ? "mano" : parrafo.pose;
+        const pose = parrafo.pose === "saludo" ? "idle" : parrafo.pose;
         mostrarPuntos();
         const audio = await hablar(parrafo.texto, pose);
         quitarPuntos();
@@ -555,10 +771,10 @@
       setPose("idle");
       estadoTexto.textContent  = "";
       btnGrabar.style.display  = "inline-block";
-      btnNoTengo.style.display = "inline-block"; 
+      btnNoTengo.style.display = "inline-block";
     }
 
-    // ── Despedida (reutilizable desde confirmar y sin-ubicación) ─────────────
+    // ── Despedida ─────────────────────────────────────────────────────────────
     async function ejecutarDespedida(frases) {
       mostrarPuntos();
       const audioDespedida = await hablar(frases.despedida, "mano");
@@ -568,12 +784,11 @@
 
       setPose("idle");
 
-      // Botón para ver el mapa
       const btnVerMapa = document.createElement("button");
       btnVerMapa.className = "btn";
       btnVerMapa.textContent = "🗺 Ver todas las historias";
       btnVerMapa.style.cssText = "background:var(--cafe);color:var(--crema);border:none;cursor:pointer;margin-top:4px;";
-      btnVerMapa.onclick = () => window.open("/static/mapa-historias.html", "_blank");
+      btnVerMapa.onclick = () => abrirMapaOverlay();
       dialogo.appendChild(btnVerMapa);
       dialogo.scrollTop = dialogo.scrollHeight;
 
@@ -585,17 +800,14 @@
     audioAmbiente.loop   = true;
     audioAmbiente.volume = 0.2;
 
-    // Dos tracks de música que ciclan entre sí
     const tracksMusica = [
       new Audio("/static/audio/musica1.mp3"),
       new Audio("/static/audio/musica2.mp3"),
     ];
-    let trackActualIdx = Math.random() < 0.5 ? 0 : 1; // empieza por uno aleatorio
+    let trackActualIdx = Math.random() < 0.5 ? 0 : 1;
     let volumenMusica  = 0.12;
 
     tracksMusica.forEach(t => { t.volume = volumenMusica; });
-
-    // Cuando termina un track, arranca el otro
     tracksMusica[0].onended = () => { trackActualIdx = 1; tracksMusica[1].play(); };
     tracksMusica[1].onended = () => { trackActualIdx = 0; tracksMusica[0].play(); };
 
@@ -609,14 +821,12 @@
     }
 
     function ducking(activar) {
-      const volAmbiente = activar ? 0.11  : 0.17;
+      const volAmbiente = activar ? 0.11 : 0.17;
       const volMusica   = activar ? 0.02 : 0.10;
       volumenMusica     = volMusica;
 
-      const pasos = 20;
-      const intervalo = 50;
+      const pasos = 20, intervalo = 50;
       let paso = 0;
-
       const volActualAmbiente = audioAmbiente.volume;
       const volActualMusica   = musicaActual().volume;
       const diffAmbiente = volAmbiente - volActualAmbiente;
@@ -633,11 +843,29 @@
         if (paso >= pasos) clearInterval(fade);
       }, intervalo);
     }
+
+    // ── Pausa ────────────────────────────────────────────────────────────────
+    btnPausa.addEventListener("click", () => {
+      if (!audioActual) return;
+      if (pausado) {
+        audioActual.play();
+        audioAmbiente.play().catch(() => {});
+        musicaActual().play().catch(() => {});
+        pausado = false;
+        btnPausa.textContent = "⏸ Pausar";
+      } else {
+        audioActual.pause();
+        audioAmbiente.pause();
+        musicaActual().pause();
+        pausado = true;
+        btnPausa.textContent = "▶ Reanudar";
+      }
+    });
+
     // ── Arranque ─────────────────────────────────────────────────────────────
     async function arrancar() {
-      // Detecta si viene con un ID específico desde el mapa
-      const params     = new URLSearchParams(window.location.search);
-      const idElegido  = params.get("historia");
+      const params    = new URLSearchParams(window.location.search);
+      const idElegido = params.get("historia");
 
       iniciarAmbiente();
       estadoTexto.textContent = "Don Ezequiel está recordando una historia...";
@@ -656,7 +884,8 @@
           const audio = await hablar(texto, "idle");
           await reproducir(audio);
           setPose("idle");
-          btnGrabar.style.display = "inline-block";
+          btnGrabar.style.display  = "inline-block";
+          btnNoTengo.style.display = "inline-block";
           return;
         }
 
@@ -669,29 +898,27 @@
       }
     }
 
-    // Si el usuario no quiere contar una historia.
+    // ── No tengo historia ────────────────────────────────────────────────────
     btnNoTengo.addEventListener("click", async () => {
-    btnNoTengo.style.display = "none";
-    btnGrabar.style.display  = "none";
+      btnNoTengo.style.display = "none";
+      btnGrabar.style.display  = "none";
 
-    // Don Ezequiel agradece por escuchar
-    const texto = "Vea pues, no importa. Ya con que me haya escuchado es suficiente. Si le provoca, puede echarle un ojo al mapa con las historias que otros han dejado por aquí.";
-    mostrarPuntos();
-    const audio = await hablar(texto, "mano");
-    quitarPuntos();
-    agregarBurbuja(texto, "ezequiel");
-    await reproducir(audio);
+      const texto = "Vea pues, no importa. Ya con que me haya escuchado es suficiente. Si le provoca, puede echarle un ojo al mapa con las historias que otros han dejado por aquí.";
+      mostrarPuntos();
+      const audio = await hablar(texto, "mano");
+      quitarPuntos();
+      agregarBurbuja(texto, "ezequiel");
+      await reproducir(audio);
 
-    setPose("idle");
+      setPose("idle");
 
-    // Botón para ver el mapa
-    const btnVerMapa = document.createElement("button");
-    btnVerMapa.className = "btn";
-    btnVerMapa.textContent = "🗺 Ver todas las historias";
-    btnVerMapa.style.cssText = "background:var(--cafe);color:var(--crema);border:none;cursor:pointer;";
-    btnVerMapa.onclick = () => window.open("/static/mapa-historias.html", "_blank");
-    dialogo.appendChild(btnVerMapa);
-    dialogo.scrollTop = dialogo.scrollHeight;
+      const btnVerMapa = document.createElement("button");
+      btnVerMapa.className = "btn";
+      btnVerMapa.textContent = "🗺 Ver todas las historias";
+      btnVerMapa.style.cssText = "background:var(--cafe);color:var(--crema);border:none;cursor:pointer;";
+      btnVerMapa.onclick = () => abrirMapaOverlay();
+      dialogo.appendChild(btnVerMapa);
+      dialogo.scrollTop = dialogo.scrollHeight;
     });
 
     // ── Grabar ───────────────────────────────────────────────────────────────
@@ -699,6 +926,7 @@
       chunks = [];
       seccionMapa.style.display       = "none";
       transcripcionWrap.style.display = "none";
+      btnNoTengo.style.display        = "none";
 
       let stream;
       try {
@@ -732,27 +960,6 @@
       }
     });
 
-    const btnPausa = document.getElementById("btn-pausa");
-    let pausado = false;
-
-    // Pausa.
-    btnPausa.addEventListener("click", () => {
-    if (!audioActual) return;
-    if (pausado) {
-      audioActual.play();
-      audioAmbiente.play().catch(() => {});
-      musicaActual().play().catch(() => {});
-      pausado = false;
-      btnPausa.textContent = "⏸ Pausar";
-    } else {
-      audioActual.pause();
-      audioAmbiente.pause();
-      musicaActual().pause();
-      pausado = true;
-      btnPausa.textContent = "▶ Reanudar";
-    }
-    });
-
     // ── Procesar audio ────────────────────────────────────────────────────────
     async function procesarAudio() {
       const blob = new Blob(chunks, { type: "audio/webm" });
@@ -760,13 +967,13 @@
       fd.append("audio", blob, "historia.webm");
 
       try {
-        // 1. Transcribir
         const r1   = await fetch("/transcribir", { method: "POST", body: fd });
         const data = await r1.json();
 
         if (data.error) {
           estadoTexto.textContent = "❌ Error al transcribir.";
-          btnGrabar.style.display = "inline-block";
+          btnGrabar.style.display  = "inline-block";
+          btnNoTengo.style.display = "inline-block";
           return;
         }
 
@@ -777,11 +984,11 @@
 
         estadoTexto.textContent = "Don Ezequiel está escuchando...";
         setPose("tomando");
-        await new Promise(r => setTimeout(r, 2000)); // un poco más de tiempo para que se vea la pose
+        await new Promise(r => setTimeout(r, 2000));
         estadoTexto.textContent = "";
         setPose("idle");
 
-        // 2. Don Ezequiel agradece
+        // Don Ezequiel agradece
         const rg      = await fetch("/gracias", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -795,23 +1002,20 @@
         agregarBurbuja(gracias.texto, "ezequiel");
         await reproducir(audioGracias);
 
-        // 3. Frases de transición y despedida
+        // Frases de transición
         const rf     = await fetch("/frases-transicion");
         const frases = await rf.json();
-        frasesActuales = frases; // guardadas para btn-sin-ubicacion
+        frasesActuales = frases;
 
-        // 4. Pregunta por el lugar
         mostrarPuntos();
         const audioTransicion = await hablar(frases.transicion, "mano");
         quitarPuntos();
         agregarBurbuja(frases.transicion, "ezequiel");
         await reproducir(audioTransicion);
 
-        // 5. Muestra el mapa
         setPose("idle");
         mostrarMapaUbicacion();
 
-        // 6. Confirmar ubicación
         btnConfirmar.onclick = async () => {
           if (!coordElegida || !historiaId) return;
           await fetch("/ubicar", {
@@ -826,8 +1030,9 @@
 
       } catch(e) {
         console.error("Error completo:", e);
-        estadoTexto.textContent = "❌ No se pudo conectar.";
-        btnGrabar.style.display = "inline-block";
+        estadoTexto.textContent  = "❌ No se pudo conectar.";
+        btnGrabar.style.display  = "inline-block";
+        btnNoTengo.style.display = "inline-block";
       }
     }
 
@@ -861,6 +1066,125 @@
       agregarBurbuja("(Historia sin ubicación definida)", "sistema");
       if (frasesActuales) await ejecutarDespedida(frasesActuales);
     });
+
+    // ── Overlay mapa general ──────────────────────────────────────────────────
+    let mapaOverlay           = null;
+    let cardActivaOverlay     = null;
+    let marcadorActivoOverlay = null;
+
+    async function abrirMapaOverlay() {
+      overlayMapa.classList.add("visible");
+
+      if (!mapaOverlay) {
+        mapaOverlay = L.map("mapa-overlay").setView([6.5567, -75.8241], 15);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap"
+        }).addTo(mapaOverlay);
+      }
+
+      setTimeout(() => mapaOverlay.invalidateSize(), 100);
+
+      const r    = await fetch("/historias");
+      const data = await r.json();
+      const hs   = data.historias;
+
+      const conUb = hs.filter(h => h.lat).length;
+      overlayContador.textContent = `${hs.length} historia${hs.length !== 1 ? "s" : ""} · ${conUb} ubicada${conUb !== 1 ? "s" : ""}`;
+
+      panelOverlay.innerHTML = "";
+      cardActivaOverlay      = null;
+
+      // Limpia marcadores anteriores
+      mapaOverlay.eachLayer(l => { if (l instanceof L.Marker) mapaOverlay.removeLayer(l); });
+
+      hs.forEach(h => {
+        const tieneUb = !!h.lat;
+        const card    = document.createElement("div");
+        card.className = "historia-card" + (tieneUb ? "" : " sin-ubicacion");
+
+        const LIMITE  = 150;
+        const esLarga = h.texto.length > LIMITE;
+        const resumen = esLarga ? h.texto.slice(0, LIMITE) + "..." : h.texto;
+        let expandido = false;
+
+        const numEl = document.createElement("div");
+        numEl.className = `card-numero${tieneUb ? "" : " sin-ub"}`;
+        numEl.textContent = `Historia #${h.id}`;
+        card.appendChild(numEl);
+
+        const textoEl = document.createElement("div");
+        textoEl.className = "card-texto";
+        textoEl.textContent = resumen;
+        card.appendChild(textoEl);
+
+        if (esLarga) {
+          const btnExp = document.createElement("button");
+          btnExp.className = "btn-expandir";
+          btnExp.textContent = "Leer más ↓";
+          btnExp.addEventListener("click", (e) => {
+            e.stopPropagation();
+            expandido = !expandido;
+            textoEl.textContent = expandido ? h.texto : resumen;
+            btnExp.textContent  = expandido ? "Leer menos ↑" : "Leer más ↓";
+          });
+          card.appendChild(btnExp);
+        }
+
+        const fechaEl = document.createElement("div");
+        fechaEl.className = "card-fecha";
+        fechaEl.textContent = `${h.fecha} · ${h.hora}`;
+        card.appendChild(fechaEl);
+
+        // Botón que cierra el overlay y pide a Don Ezequiel que la cuente
+        const btnContar = document.createElement("button");
+        btnContar.className = "btn-contar";
+        btnContar.textContent = "🎙 Que Don Ezequiel la cuente";
+        btnContar.addEventListener("click", (e) => {
+          e.stopPropagation();
+          cerrarMapaOverlay();
+          dialogo.innerHTML = "";
+          fetch(`/guion/${h.id}`)
+            .then(r => r.json())
+            .then(guion => narrarGuion(guion));
+        });
+        card.appendChild(btnContar);
+
+        if (tieneUb) {
+          const m = L.marker([h.lat, h.lng], { icon: iconoMarcadorOverlay }).addTo(mapaOverlay);
+          const popupResumen = h.texto.length > 120 ? h.texto.slice(0, 120) + "..." : h.texto;
+          m.bindPopup(`
+            <div class="popup-numero">Historia #${h.id}</div>
+            <div class="popup-texto">${popupResumen}</div>
+          `);
+          m.on("click", () => {
+            activarCardOverlay(card, m);
+            card.scrollIntoView({ behavior: "smooth", block: "center" });
+          });
+          card.addEventListener("click", () => {
+            activarCardOverlay(card, m);
+            mapaOverlay.flyTo([h.lat, h.lng], 17, { duration: 0.8 });
+            m.openPopup();
+          });
+        }
+
+        panelOverlay.appendChild(card);
+      });
+    }
+
+    function cerrarMapaOverlay() {
+      overlayMapa.classList.remove("visible");
+    }
+
+    function activarCardOverlay(card, marcador) {
+      if (cardActivaOverlay) cardActivaOverlay.classList.remove("activa");
+      card.classList.add("activa");
+      cardActivaOverlay = card;
+      if (marcadorActivoOverlay) marcadorActivoOverlay.setIcon(iconoMarcadorOverlay);
+      if (marcador) { marcador.setIcon(iconoActivoOverlay); marcadorActivoOverlay = marcador; }
+    }
+
+    document.getElementById("btn-mapa").addEventListener("click", abrirMapaOverlay);
+    document.getElementById("btn-cerrar-mapa").addEventListener("click", cerrarMapaOverlay);
 
     arrancar();
   </script>

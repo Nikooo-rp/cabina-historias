@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse, Response
 import requests, tempfile, os
 from datetime import datetime
 from openai import OpenAI
+from elevenlabs.client import ElevenLabs
 
 load_dotenv()
 
@@ -37,6 +38,11 @@ os.makedirs(CARPETA_AUDIOS, exist_ok=True)
 client = OpenAI(
     api_key=LEMONFOX_API_KEY,
     base_url="https://api.lemonfox.ai/v1",
+)
+
+client_eleven = ElevenLabs(
+    api_key=ELEVENLABS_API_KEY,
+    base_url="https://api.elevenlabs.io/v1",
 )
 
 with open("instrucciones.txt", "r", encoding="utf-8") as f:
@@ -291,6 +297,31 @@ async def transcribir(audio: UploadFile = File(...)):
                 },
                 files={"file": f},
             )
+            # respuesta = client_eleven.speech_to_text.convert(
+            #     file=f, model_id="scribe_v1", 
+            #     file_format="json", 
+            #     language_code="es",
+            #     keyterms= [
+            #         "Santa Fe de Antioquia", 
+            #         "Parque Principal", 
+            #         "Plaza Principal", 
+            #         "Catedral de Santa Bárbara", 
+            #         "Iglesia de Chiquinquirá",  
+            #         "¿usté ubica?", 
+            #         "¿usted sabe?", "¿me entiende?", "¿cierto?",
+            #         "¿sí o no?", "¿verdad?", "¿ve?", "vea que", "resulta que",
+            #         "es que", "o sea", "digamos", "por decir algo", "como le dijera",
+            #         "parce", "pues", "ome", "sumercé", "el man", "hágale", "ahorita", "hace años", "parcerito", "nea", "neita"
+            #         "dizque", "vea pues", "no joda", "qué cosa", "de aquí del pueblo", "man", "quizque", "jueputa",
+            #         "los del pueblo", "los viejos", "los ancestros", "los abuelos", "usté", "ubica", "cacorro", "lucas", "luca"
+            #         "misia", "don", "doña", "el finado", "la finada", "en paz descanse", "arrinconar", "putería", "llanta",
+            #         "que Dios lo tenga", "eso sí era", "antes de la carretera", "malparido", "hijueputa"
+            #         "cuando no había luz", "en tiempos de la violencia",
+            #         "subir al cerro", "bajar al río", "cruzar el puente",
+            #         "la procesión", "la novena", "el novenario", "la Semana Santa",
+            #         "el Corpus Christi", "las fiestas del municipio", "el Festival del Porro"
+            #     ]
+            # )
 
         respuesta.raise_for_status()
         texto = respuesta.json()["text"]

@@ -336,7 +336,12 @@
           btnContar.textContent = "🎙 Que Don Ezequiel la cuente";
           btnContar.addEventListener("click", (e) => {
             e.stopPropagation();
-            window.location.href = `/static/index.html?historia=${h.id}`;
+            cerrarMapaOverlay();
+            // Reinicia la narración con esa historia
+            dialogo.innerHTML = "";
+            fetch(`/guion/${h.id}`)
+              .then(r => r.json())
+              .then(guion => narrarGuion(guion));
           });
           card.appendChild(btnContar);
 
