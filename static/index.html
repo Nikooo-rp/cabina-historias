@@ -87,13 +87,13 @@
     }
 
     #lado-personaje {
-      width: 36%;
+      width: auto;
       position: relative;
       display: flex;
       align-items: flex-end;
       justify-content: center;
       overflow: hidden;
-      background: linear-gradient(to bottom, var(--crema) 0%, var(--crema-dark) 100%);
+      flex-shrink: 0;
     }
 
     #lado-personaje::after {
@@ -115,18 +115,19 @@
     }
 
     .pose {
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      height: 90vh;
+      position: relative;
+      bottom: auto;
+      left: auto;
+      transform: none;
+      height: 100%;
       width: auto;
       object-fit: contain;
       opacity: 0;
       filter: drop-shadow(0 12px 32px rgba(59,31,14,0.15));
+      display: none;
     }
 
-    .pose.activa { opacity: 1; }
+    .pose.activa { opacity: 1; display: block; }
 
     #lado-panel {
       flex: 1;
@@ -563,12 +564,10 @@
 <body>
 
   <div id="header">
-    <button class="header-btn">☰</button>
     <div id="header-titulo">
-      Santa Fe de Antioquia
-      <span>Historias de ayer y hoy</span>
+      Relaticos
+      <span>de Santa Fe de Antioquia</span>
     </div>
-    <button class="header-btn">◎</button>
   </div>
 
   <div id="app">
