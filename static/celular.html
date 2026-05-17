@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Relaticos — Don Ezequiel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --crema:      #f0e6d3;
+      --crema-dark: #e4d5bc;
+      --tierra:     #3b1f0e;
+      --cafe:       #5c2d0e;
+      --cafe-mid:   #8b5a3a;
+      --dorado:     #c9943a;
+      --texto:      #2a1505;
+      --gris:       #9a856e;
+      --blanco:     #fdf8f2;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--crema);
+      color: var(--texto);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    #header {
+      background: var(--cafe);
+      padding: 16px 20px;
+      text-align: center;
+      border-radius: 0 0 20px 20px;
+      box-shadow: 0 4px 20px rgba(59,31,14,0.2);
+    }
+
+    #header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      color: var(--crema);
+      font-weight: 600;
+    }
+
+    #header span {
+      display: block;
+      font-size: 0.75rem;
+      color: rgba(240,230,211,0.7);
+      font-style: italic;
+      margin-top: 2px;
+    }
+
+    #personaje-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 20px 0 0;
+      position: relative;
+    }
+
+    .pose {
+      height: 45vw;
+      max-height: 240px;
+      width: auto;
+      object-fit: contain;
+      opacity: 0;
+      filter: drop-shadow(0 8px 20px rgba(59,31,14,0.15));
+      position: absolute;
+    }
+
+    .pose.activa {
+      opacity: 1;
+      position: relative;
+    }
+
+    #dialogo-wrap {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .burbuja {
+      max-width: 88%;
+      padding: 12px 16px;
+      font-size: 1rem;
+      line-height: 1.6;
+      animation: aparecer 0.3s ease forwards;
+      opacity: 0;
+    }
+
+    @keyframes aparecer {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .burbuja.ezequiel {
+      background: var(--cafe);
+      color: var(--crema);
+      border-radius: 4px 16px 16px 16px;
+      align-self: flex-start;
+      box-shadow: 0 2px 10px rgba(59,31,14,0.12);
+    }
+
+    .burbuja.sistema {
+      background: transparent;
+      color: var(--gris);
+      font-size: 0.8rem;
+      align-self: center;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .puntos {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+      padding: 12px 18px;
+      background: var(--cafe);
+      border-radius: 4px 16px 16px 16px;
+      align-self: flex-start;
+    }
+
+    .puntos span {
+      width: 6px; height: 6px;
+      background: var(--crema);
+      border-radius: 50%;
+      opacity: 0.4;
+      animation: pulso 1.2s ease-in-out infinite;
+    }
+
+    .puntos span:nth-child(2) { animation-delay: 0.2s; }
+    .puntos span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulso {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50%       { opacity: 0.9; transform: scale(1.1); }
+    }
+
+    #controles {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-bottom: 32px;
+    }
+
+    #estado-texto {
+      font-size: 0.85rem;
+      color: var(--gris);
+      font-style: italic;
+      text-align: center;
+      min-height: 18px;
+    }
+
+    .btn {
+      font-family: 'Lora', serif;
+      font-size: 1rem;
+      padding: 15px 24px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: 100%;
+      text-align: center;
+    }
+
+    #btn-grabar {
+      background: var(--dorado);
+      color: var(--tierra);
+      display: none;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(92,45,14,0.25);
+    }
+
+    #btn-grabar:active { transform: scale(0.97); }
+
+    #btn-detener {
+      background: var(--crema-dark);
+      color: var(--cafe);
+      border: 1px solid rgba(92,45,14,0.2);
+      display: none;
+    }
+
+    #btn-detener:active { transform: scale(0.97); }
+
+    #btn-no-tengo {
+      background: transparent;
+      color: var(--gris);
+      border: 1px solid rgba(154,133,110,0.4);
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    #indicador-rec {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #c0392b;
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    #indicador-rec .punto-rojo {
+      width: 10px; height: 10px;
+      background: #c0392b;
+      border-radius: 50%;
+      animation: parpadeo 1s ease-in-out infinite;
+    }
+
+    @keyframes parpadeo {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.2; }
+    }
+
+    #mensaje-final {
+      display: none;
+      background: var(--cafe);
+      color: var(--crema);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin: 16px;
+      box-shadow: 0 4px 20px rgba(59,31,14,0.2);
+    }
+
+    #mensaje-final strong {
+      display: block;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      margin-bottom: 8px;
+      color: var(--dorado);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Pantalla de bienvenida — desbloquea el audio en móvil -->
+  <div id="pantalla-inicio" style="
+    position: fixed; inset: 0;
+    background: var(--cafe);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 32px; z-index: 999; padding: 40px;
+    text-align: center;
+  ">
+    <div style="font-family:'Playfair Display',serif; font-size:2rem; color:var(--dorado); font-weight:600;">
+      Relaticos
+    </div>
+    <div style="font-family:'Lora',serif; font-size:1rem; color:var(--crema); opacity:0.85; line-height:1.7;">
+      Don Ezequiel tiene una historia que contarle.<br>Toque para escuchar.
+    </div>
+    <button id="btn-inicio" style="
+      background: var(--dorado); color: var(--tierra);
+      border: none; border-radius: 50px;
+      padding: 18px 48px; font-size: 1.1rem;
+      font-family: 'Lora', serif; font-weight: 600;
+      cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    ">
+      Comenzar
+    </button>
+  </div>
+
+  <div id="header">
+    <h1>Relaticos</h1>
+    <span>Santa Fe de Antioquia</span>
+  </div>
+
+  <div id="personaje-wrap">
+    <img class="pose activa" id="pose-idle"     src="img/idle.png"     alt="Don Ezequiel">
+    <img class="pose"        id="pose-hablando" src="img/hablando.png" alt="Don Ezequiel hablando">
+    <img class="pose"        id="pose-secreto"  src="img/secreto.png"  alt="Don Ezequiel secreto">
+    <img class="pose"        id="pose-mano"     src="img/mano.png"     alt="Don Ezequiel mano">
+    <img class="pose"        id="pose-tomando"  src="img/tomando.png"  alt="Don Ezequiel tomando">
+  </div>
+
+  <div id="dialogo-wrap"></div>
+
+  <div id="controles">
+    <div id="indicador-rec">
+      <div class="punto-rojo"></div>
+      Grabando...
+    </div>
+    <div id="estado-texto"></div>
+    <button class="btn" id="btn-grabar">🎙 Contar mi historia</button>
+    <button class="btn" id="btn-detener">⏹ Listo, terminé</button>
+    <button class="btn" id="btn-no-tengo">No tengo una historia por ahora</button>
+  </div>
+
+  <div id="mensaje-final">
+    <strong>¡Nos vemos en la cabina!</strong>
+    Busca a Don Ezequiel adentro — él tiene más historias que contarte, y puede mostrarte
+    en el mapa dónde ocurrió lo que acabas de escuchar.
+  </div>
+
+  <script>
+    const dialogo      = document.getElementById("dialogo-wrap");
+    const estadoTexto  = document.getElementById("estado-texto");
+    const btnGrabar    = document.getElementById("btn-grabar");
+    const btnDetener   = document.getElementById("btn-detener");
+    const btnNoTengo   = document.getElementById("btn-no-tengo");
+    const indicadorRec = document.getElementById("indicador-rec");
+    const mensajeFinal = document.getElementById("mensaje-final");
+
+    const poses = {
+      idle:     document.getElementById("pose-idle"),
+      hablando: document.getElementById("pose-hablando"),
+      secreto:  document.getElementById("pose-secreto"),
+      mano:     document.getElementById("pose-mano"),
+      tomando:  document.getElementById("pose-tomando"),
+    };
+
+    let poseActual    = "idle";
+    let mediaRecorder = null;
+    let chunks        = [];
+    let audioActual   = null;
+
+    function setPose(nombre) {
+      if (poseActual === nombre) return;
+      poses[poseActual].classList.remove("activa");
+      (poses[nombre] || poses["idle"]).classList.add("activa");
+      poseActual = nombre;
+    }
+
+    function agregarBurbuja(texto, tipo = "ezequiel") {
+      const div = document.createElement("div");
+      div.className = `burbuja ${tipo}`;
+      div.textContent = texto;
+      dialogo.appendChild(div);
+      dialogo.scrollTop = dialogo.scrollHeight;
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function mostrarPuntos() {
+      const div = document.createElement("div");
+      div.className = "puntos";
+      div.id = "puntos-cargando";
+      div.innerHTML = "<span></span><span></span><span></span>";
+      dialogo.appendChild(div);
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function quitarPuntos() {
+      const p = document.getElementById("puntos-cargando");
+      if (p) p.remove();
+    }
+
+    async function hablar(texto, pose) {
+      setPose(pose);
+      const r = await fetch("/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto })
+      });
+      if (!r.ok) throw new Error(`TTS error ${r.status}`);
+      const blob  = await r.blob();
+      const url   = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio._url  = url;
+      return audio;
+    }
+
+    async function reproducir(audio) {
+      if (audioActual) { audioActual.pause(); audioActual = null; }
+      audioActual = audio;
+      audio.play();
+      await new Promise(r => {
+        audio.onended = () => { URL.revokeObjectURL(audio._url); r(); };
+      });
+    }
+
+    async function narrarGuion(guion) {
+      for (const parrafo of guion.parrafos) {
+        const pose = parrafo.pose === "saludo" ? "idle" : parrafo.pose;
+        mostrarPuntos();
+        const audio = await hablar(parrafo.texto, pose);
+        quitarPuntos();
+        agregarBurbuja(parrafo.texto, "ezequiel");
+        await reproducir(audio);
+      }
+    }
+
+    async function arrancar() {
+      estadoTexto.textContent = "Don Ezequiel está recordando una historia...";
+      mostrarPuntos();
+
+      try {
+        const r    = await fetch("/historia-aleatoria");
+        const data = await r.json();
+        quitarPuntos();
+        estadoTexto.textContent = "";
+
+        if (data.error) {
+          const texto = "Buenas tardes tenga usted. Soy Don Ezequiel, y me alegra mucho que haya venido por aquí.";
+          agregarBurbuja(texto, "ezequiel");
+          const audio = await hablar(texto, "idle");
+          await reproducir(audio);
+        } else {
+          await narrarGuion(data);
+        }
+
+        await invitarAContar();
+
+      } catch(e) {
+        quitarPuntos();
+        agregarBurbuja("(No se pudo conectar con el servidor)", "sistema");
+        estadoTexto.textContent = "";
+      }
+    }
+
+    async function invitarAContar() {
+      const texto = "¿Y usted, no tendrá alguna historia que contarme de por estos lados?";
+      mostrarPuntos();
+      const audio = await hablar(texto, "mano");
+      quitarPuntos();
+      agregarBurbuja(texto, "ezequiel");
+      await reproducir(audio);
+
+      setPose("idle");
+      btnGrabar.style.display  = "block";
+      btnNoTengo.style.display = "block";
+      estadoTexto.textContent  = "";
+    }
+
+    btnGrabar.addEventListener("click", async () => {
+      chunks = [];
+
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch(e) {
+        estadoTexto.textContent = "❌ No se pudo acceder al micrófono.";
+        return;
+      }
+
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        await procesarAudioCelular();
+      };
+
+      mediaRecorder.start(250);
+      setPose("idle");
+      btnGrabar.style.display    = "none";
+      btnNoTengo.style.display   = "none";
+      btnDetener.style.display   = "block";
+      indicadorRec.style.display = "flex";
+      estadoTexto.textContent    = "";
+      agregarBurbuja("(El visitante está contando una historia...)", "sistema");
+    });
+
+    btnDetener.addEventListener("click", () => {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        btnDetener.style.display   = "none";
+        indicadorRec.style.display = "none";
+        estadoTexto.textContent    = "Don Ezequiel está escuchando...";
+        setPose("tomando");
+      }
+    });
+
+    // Transcribe y guarda — sin generar guión
+    async function procesarAudioCelular() {
+      const blob = new Blob(chunks, { type: "audio/webm" });
+      const fd   = new FormData();
+      fd.append("audio", blob, "historia_celular.webm");
+
+      try {
+        const r    = await fetch("/transcribir-celular", { method: "POST", body: fd });
+        const data = await r.json();
+
+        if (data.error) {
+          estadoTexto.textContent = "❌ No se pudo guardar.";
+          setPose("idle");
+          btnGrabar.style.display  = "block";
+          btnNoTengo.style.display = "block";
+          return;
+        }
+
+        estadoTexto.textContent = "";
+        setPose("idle");
+        await despedirse();
+
+      } catch(e) {
+        estadoTexto.textContent = "❌ No se pudo conectar.";
+        setPose("idle");
+        console.error(e);
+      }
+    }
+
+    btnNoTengo.addEventListener("click", async () => {
+      btnGrabar.style.display  = "none";
+      btnNoTengo.style.display = "none";
+      await despedirse(true);
+    });
+
+    async function despedirse(sinHistoria = false) {
+      const texto = sinHistoria
+        ? "Vea pues, no importa. Ya con que me haya escuchado es suficiente. Si le provoca, pásese por la cabina que está aquí cerquita — allá hay más historias del pueblo esperándolo."
+        : "Muchas gracias por compartir eso conmigo, pues. Guardo muy bien su historia. Si quiere, pásese por la cabina que está aquí cerquita — allá le cuento más cosas de por estos lados.";
+
+      mostrarPuntos();
+      const audio = await hablar(texto, "mano");
+      quitarPuntos();
+      agregarBurbuja(texto, "ezequiel");
+      await reproducir(audio);
+
+      setPose("idle");
+      mensajeFinal.style.display = "block";
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    // La interacción del usuario desbloquea el audio en móvil
+    document.getElementById("btn-inicio").addEventListener("click", () => {
+    document.getElementById("pantalla-inicio").style.display = "none";
+    // Precarga un audio silencioso para desbloquear el contexto de audio
+    const silencio = new Audio("data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV////////////////////////////////////////////AAAAAExhdmM1OC41AAAAAAAAAAAAAAAAJAAAAAAAAAAB0AatpwAA/+MYxAALiAIAAP/AADwQKVE9YWDGPkQWpT6yk4+zIiYPoTUaT3tnU6uPs42qsMpT7MGTJ8mRk+f5+T7/KZNc5y+ZlKZSEAhCBQKBTMzMUkBA");
+    silencio.play().catch(() => {});
+    arrancar();
+    });
+  </script>
+</body>
+</html>

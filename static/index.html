@@ -768,7 +768,56 @@
         await reproducir(audio);
       }
       setPose("idle");
-      estadoTexto.textContent  = "";
+      estadoTexto.textContent = "";
+
+      // Revisa si esta historia vino del celular y no tiene ubicación
+      if (guion.id) {
+        const rh = await fetch("/historias");
+        const dh = await rh.json();
+        const estaHistoria = dh.historias.find(h => h.id === guion.id);
+
+        if (estaHistoria && estaHistoria.sin_ubicar && estaHistoria.origen === "celular") {
+          // Pregunta si el visitante quiere ubicar la historia que acaba de escuchar
+          const textoUbicar = "Vea pues, esta historia me la trajo alguien que pasó por aquí antes de usted. ¿No quiere marcar en el mapa dónde fue que ocurrió?";
+          mostrarPuntos();
+          const audioUbicar = await hablar(textoUbicar, "mano");
+          quitarPuntos();
+          agregarBurbuja(textoUbicar, "ezequiel");
+          await reproducir(audioUbicar);
+
+          historiaId = guion.id;
+          mostrarMapaUbicacion();
+
+          // Al confirmar ubicación, quita el flag sin_ubicar
+          btnConfirmar.onclick = async () => {
+            if (!coordElegida || !historiaId) return;
+            await fetch("/ubicar", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: historiaId, lat: coordElegida.lat, lng: coordElegida.lng })
+            });
+            await fetch("/marcar-ubicada", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: historiaId })
+            });
+            seccionMapa.style.display = "none";
+            agregarBurbuja("(Historia ubicada en el mapa ✓)", "sistema");
+            btnGrabar.style.display  = "inline-block";
+            btnNoTengo.style.display = "inline-block";
+          };
+
+          // Sin ubicación — igual termina normalmente
+          btnSinUbicacion.onclick = () => {
+            seccionMapa.style.display = "none";
+            btnGrabar.style.display   = "inline-block";
+            btnNoTengo.style.display  = "inline-block";
+          };
+
+          return; // no muestra los botones todavía — espera decisión del mapa
+        }
+      }
+
       btnGrabar.style.display  = "inline-block";
       btnNoTengo.style.display = "inline-block";
     }
@@ -867,6 +916,27 @@
       const idElegido = params.get("historia");
 
       iniciarAmbiente();
+
+      // Genera guiones pendientes del celular en segundo plano (silencioso)
+      fetch("/historias-pendientes")
+        .then(r => r.json())
+        .then(data => {
+          data.pendientes.forEach(h => {
+            fetch("/guion", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: h.id })
+            }).then(() => {
+              fetch("/marcar-procesada", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: h.id })
+              });
+            });
+          });
+        })
+        .catch(() => {});
+
       estadoTexto.textContent = "Don Ezequiel está recordando una historia...";
       mostrarPuntos();
 

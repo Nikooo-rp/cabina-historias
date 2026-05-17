@@ -3,3 +3,16 @@ venv\Scripts\activate
 uvicorn main:app --reload
 
 http://127.0.0.1:8000/static/index.html
+
+ngrok:
+uvicorn main:app --host 0.0.0.0 --port 8000
+ngrok http 8000
+
+monitoring: 
+http://127.0.0.1:4040
+
+device urls:
+pc: https://a1b2c3d4.ngrok-free.app/static/index.html
+phone: https://a1b2c3d4.ngrok-free.app/static/celular.html
+map: https://a1b2c3d4.ngrok-free.app/static/mapa-historias.html
+

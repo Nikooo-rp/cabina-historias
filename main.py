@@ -30,10 +30,12 @@ ELEVENLABS_API_KEY  = os.getenv("11LAB_KEY")
 ELEVENLABS_VOICE_ID = "gUMwNXyuudv6WujOBL4s"
 
 # Archivos y carpetas
-ARCHIVO_HISTORIAS = "historias.jsonl"
-ARCHIVO_GUIONES   = "guiones.jsonl"
-CARPETA_AUDIOS    = "audios"
+ARCHIVO_HISTORIAS        = "historias.jsonl"
+ARCHIVO_GUIONES          = "guiones.jsonl"
+CARPETA_AUDIOS           = "audios"
+CARPETA_AUDIOS_PENDIENTES = "audios_pendientes"
 os.makedirs(CARPETA_AUDIOS, exist_ok=True)
+os.makedirs(CARPETA_AUDIOS_PENDIENTES, exist_ok=True)
 
 client = OpenAI(
     api_key=LEMONFOX_API_KEY,
@@ -205,7 +207,6 @@ def agregar_linea(path: str, registro: dict):
 # ─── Caché de audios ─────────────────────────────────────────────────────────
 
 def ruta_audio(texto: str) -> str:
-    """Genera una ruta única basada en el contenido del texto."""
     hash_texto = hashlib.md5(texto.encode()).hexdigest()
     return os.path.join(CARPETA_AUDIOS, f"{hash_texto}.mp3")
 
@@ -273,6 +274,21 @@ def generar_y_guardar_guion(historia: dict) -> dict:
 
     return guion
 
+def transcribir_audio_elevenlabs(tmp_path: str) -> str:
+    with open(tmp_path, "rb") as f:
+        respuesta = requests.post(
+            "https://api.elevenlabs.io/v1/speech-to-text",
+            headers={"xi-api-key": ELEVENLABS_API_KEY},
+            files={"file": ("audio.webm", f, "audio/webm")},
+            data={
+                "model_id": "scribe_v1",
+                "language_code": "es",
+                "tag_audio_events": "false",
+            }
+        )
+    respuesta.raise_for_status()
+    return respuesta.json()["text"]
+
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 
 @app.get("/")
@@ -286,27 +302,15 @@ async def transcribir(audio: UploadFile = File(...)):
         tmp_path = tmp.name
 
     try:
-        with open(tmp_path, "rb") as f:
-            respuesta = requests.post(
-                "https://api.elevenlabs.io/v1/speech-to-text",
-                headers={"xi-api-key": ELEVENLABS_API_KEY},
-                files={"file": ("audio.webm", f, "audio/webm")},
-                data={
-                    "model_id": "scribe_v1",
-                    "language_code": "es",
-                    "tag_audio_events": "false",
-                }
-            )
-
-        respuesta.raise_for_status()
-        texto = respuesta.json()["text"]
+        texto = transcribir_audio_elevenlabs(tmp_path)
 
         numero = len(leer_archivo(ARCHIVO_HISTORIAS)) + 1
         historia = {
             "id":    numero,
             "fecha": datetime.now().strftime("%Y-%m-%d"),
             "hora":  datetime.now().strftime("%H:%M:%S"),
-            "texto": texto
+            "texto": texto,
+            "origen": "cabina",
         }
         agregar_linea(ARCHIVO_HISTORIAS, historia)
         guion = generar_y_guardar_guion(historia)
@@ -317,6 +321,71 @@ async def transcribir(audio: UploadFile = File(...)):
         return {"error": str(e)}
     finally:
         os.unlink(tmp_path)
+
+# ─── Endpoint celular: solo transcribe, sin guión ────────────────────────────
+
+@app.post("/transcribir-celular")
+async def transcribir_celular(audio: UploadFile = File(...)):
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
+        tmp.write(await audio.read())
+        tmp_path = tmp.name
+
+    try:
+        texto = transcribir_audio_elevenlabs(tmp_path)
+
+        numero = len(leer_archivo(ARCHIVO_HISTORIAS)) + 1
+        historia = {
+            "id":        numero,
+            "fecha":     datetime.now().strftime("%Y-%m-%d"),
+            "hora":      datetime.now().strftime("%H:%M:%S"),
+            "texto":     texto,
+            "origen":    "celular",
+            "sin_ubicar": True,
+            "sin_guion":  True,
+        }
+        agregar_linea(ARCHIVO_HISTORIAS, historia)
+
+        return {"ok": True, "numero": numero, "texto": texto}
+
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        os.unlink(tmp_path)
+
+# ─── Endpoints de flags para celular ─────────────────────────────────────────
+
+@app.get("/historias-pendientes")
+def historias_pendientes():
+    """Devuelve historias sin guión para que la cabina las procese."""
+    historias = leer_archivo(ARCHIVO_HISTORIAS)
+    pendientes = [h for h in historias if h.get("sin_guion")]
+    return {"pendientes": pendientes, "total": len(pendientes)}
+
+@app.post("/marcar-procesada")
+async def marcar_procesada(request: Request):
+    """Quita el flag sin_guion una vez que la cabina genera el guión."""
+    datos     = await request.json()
+    historias = leer_archivo(ARCHIVO_HISTORIAS)
+    for h in historias:
+        if h["id"] == datos["id"]:
+            h.pop("sin_guion", None)
+            break
+    escribir_archivo(ARCHIVO_HISTORIAS, historias)
+    return {"ok": True}
+
+@app.post("/marcar-ubicada")
+async def marcar_ubicada(request: Request):
+    """Quita el flag sin_ubicar una vez que la historia es ubicada en la cabina."""
+    datos     = await request.json()
+    historias = leer_archivo(ARCHIVO_HISTORIAS)
+    for h in historias:
+        if h["id"] == datos["id"]:
+            h.pop("sin_ubicar", None)
+            break
+    escribir_archivo(ARCHIVO_HISTORIAS, historias)
+    return {"ok": True}
+
+# ─── Resto de endpoints ───────────────────────────────────────────────────────
 
 @app.get("/historias")
 def ver_historias():
@@ -410,11 +479,9 @@ async def tts(request: Request):
     texto = datos.get("texto", "")
     ruta  = ruta_audio(texto)
 
-    # Si ya existe el audio, lo devuelve directamente sin llamar a ElevenLabs
     if os.path.exists(ruta):
         return FileResponse(ruta, media_type="audio/mpeg")
 
-    # Si no existe, lo genera y guarda
     respuesta = requests.post(
         f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}",
         headers={
